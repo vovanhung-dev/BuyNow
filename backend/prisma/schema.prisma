@@ -1,0 +1,207 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== USERS ====================
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique @db.VarChar(255)
+  password  String   @db.VarChar(255)
+  name      String   @db.VarChar(255)
+  phone     String?  @db.VarChar(20)
+  role      Role     @default(SALES)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders    Order[]
+  stockLogs StockLog[]
+
+  @@map("users")
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  SALES
+}
+
+// ==================== CUSTOMER GROUP ====================
+model CustomerGroup {
+  id        String    @id @default(uuid())
+  code      String    @unique @db.VarChar(50)
+  name      String    @db.VarChar(255)
+  priceType PriceType @default(WHOLESALE)
+  createdAt DateTime  @default(now())
+
+  customers Customer[]
+
+  @@map("customer_groups")
+}
+
+enum PriceType {
+  WHOLESALE
+  MEDIUM_DEALER
+  LARGE_DEALER
+  RETAIL
+}
+
+// ==================== CUSTOMER ====================
+model Customer {
+  id              String         @id @default(uuid())
+  code            String         @unique @db.VarChar(50)
+  name            String         @db.VarChar(255)
+  customerGroupId String?
+  customerGroup   CustomerGroup? @relation(fields: [customerGroupId], references: [id])
+  address         String?        @db.VarChar(500)
+  phone           String?        @db.VarChar(20)
+  district        String?        @db.VarChar(100)
+  ward            String?        @db.VarChar(100)
+  totalDebt       Decimal        @default(0) @db.Decimal(15, 0)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  orders   Order[]
+  payments Payment[]
+
+  @@index([name])
+  @@index([phone])
+  @@index([customerGroupId])
+  @@map("customers")
+}
+
+// ==================== PRODUCT ====================
+model Product {
+  id                String   @id @default(uuid())
+  sku               String   @unique @db.VarChar(50)
+  name              String   @db.VarChar(255)
+  unit              String?  @db.VarChar(50)
+  wholesalePrice    Decimal  @default(0) @db.Decimal(15, 0)
+  mediumDealerPrice Decimal  @default(0) @db.Decimal(15, 0)
+  largeDealerPrice  Decimal  @default(0) @db.Decimal(15, 0)
+  retailPrice       Decimal  @default(0) @db.Decimal(15, 0)
+  stock             Int      @default(0)
+  minStock          Int      @default(10)
+  active            Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  orderItems OrderItem[]
+  stockLogs  StockLog[]
+
+  @@index([name])
+  @@index([sku])
+  @@map("products")
+}
+
+// ==================== ORDER ====================
+model Order {
+  id              String      @id @default(uuid())
+  code            String      @unique @db.VarChar(50)
+  orderDate       DateTime    @default(now())
+  customerId      String
+  customer        Customer    @relation(fields: [customerId], references: [id])
+  customerName    String      @db.VarChar(255)
+  customerPhone   String?     @db.VarChar(20)
+  customerAddress String?     @db.VarChar(500)
+  userId          String
+  user            User        @relation(fields: [userId], references: [id])
+  priceType       PriceType
+  subtotal        Decimal     @db.Decimal(15, 0)
+  discount        Decimal     @default(0) @db.Decimal(15, 0)
+  total           Decimal     @db.Decimal(15, 0)
+  paidAmount      Decimal     @default(0) @db.Decimal(15, 0)
+  debtAmount      Decimal     @default(0) @db.Decimal(15, 0)
+  status          OrderStatus @default(PENDING)
+  note            String?     @db.Text
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  items    OrderItem[]
+  payments Payment[]
+
+  @@index([orderDate])
+  @@index([customerId])
+  @@index([userId])
+  @@index([status])
+  @@map("orders")
+}
+
+enum OrderStatus {
+  PENDING
+  APPROVED
+  COMPLETED
+  CANCELLED
+}
+
+// ==================== ORDER ITEM ====================
+model OrderItem {
+  id          String  @id @default(uuid())
+  orderId     String
+  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product @relation(fields: [productId], references: [id])
+  stt         Int
+  productName String  @db.VarChar(255)
+  unit        String? @db.VarChar(50)
+  quantity    Int
+  unitPrice   Decimal @db.Decimal(15, 0)
+  total       Decimal @db.Decimal(15, 0)
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+// ==================== PAYMENT ====================
+model Payment {
+  id          String        @id @default(uuid())
+  orderId     String
+  order       Order         @relation(fields: [orderId], references: [id])
+  customerId  String
+  customer    Customer      @relation(fields: [customerId], references: [id])
+  amount      Decimal       @db.Decimal(15, 0)
+  method      PaymentMethod @default(CASH)
+  paymentDate DateTime      @default(now())
+  note        String?       @db.VarChar(500)
+  createdAt   DateTime      @default(now())
+
+  @@index([orderId])
+  @@index([customerId])
+  @@map("payments")
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+}
+
+// ==================== STOCK LOG ====================
+model StockLog {
+  id        String    @id @default(uuid())
+  productId String
+  product   Product   @relation(fields: [productId], references: [id])
+  type      StockType
+  quantity  Int
+  beforeQty Int
+  afterQty  Int
+  orderId   String?   @db.VarChar(50)
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  note      String?   @db.VarChar(500)
+  createdAt DateTime  @default(now())
+
+  @@index([productId])
+  @@index([createdAt])
+  @@map("stock_logs")
+}
+
+enum StockType {
+  IMPORT
+  EXPORT
+  ADJUST
+}
