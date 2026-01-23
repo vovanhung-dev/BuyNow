@@ -103,8 +103,7 @@ const theme = {
       darkItemSelectedBg: '#21777e',
     },
     Modal: {
-      headerBg: 'linear-gradient(135deg, #1a6268, #21777e)',
-      titleColor: '#ffffff',
+      borderRadiusLG: 16,
     },
     Tag: {
       defaultBg: '#f4f5f7',

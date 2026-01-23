@@ -594,41 +594,148 @@ body {
 
 /* Inputs - keep default Ant Design styling */
 
-/* Modal */
-.ant-modal-content {
-  border-radius: var(--radius-xl) !important;
-  overflow: hidden;
-  box-shadow: var(--shadow-xl) !important;
+/* ================================================
+   MODAL - Clean & Modern Design
+   ================================================ */
+
+/* Backdrop */
+.ant-modal-mask {
+  background: rgba(13, 59, 62, 0.5) !important;
+  backdrop-filter: blur(4px);
 }
 
+/* Modal Container */
+.ant-modal-content {
+  border-radius: 16px !important;
+  overflow: hidden;
+  box-shadow:
+    0 24px 48px rgba(13, 59, 62, 0.2),
+    0 0 0 1px rgba(255, 255, 255, 0.1) !important;
+  border: none !important;
+}
+
+/* Header */
 .ant-modal-header {
-  background: linear-gradient(135deg, var(--primary-700), var(--primary-600)) !important;
-  padding: 20px 24px !important;
+  background: #fff !important;
+  padding: 16px 20px 12px !important;
   border-bottom: none !important;
+  margin: 0 !important;
 }
 
 .ant-modal-title {
-  color: #fff !important;
+  color: var(--neutral-900) !important;
   font-weight: 600 !important;
-  font-size: 18px !important;
+  font-size: 17px !important;
 }
 
+/* Close Button */
 .ant-modal-close {
-  color: rgba(255, 255, 255, 0.8) !important;
+  top: 12px !important;
+  right: 12px !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 8px !important;
+  color: var(--neutral-400) !important;
+  transition: all var(--transition-fast) !important;
 }
 
 .ant-modal-close:hover {
-  color: #fff !important;
-  background: rgba(255, 255, 255, 0.1) !important;
+  color: var(--neutral-700) !important;
+  background: var(--neutral-100) !important;
 }
 
+.ant-modal-close-x {
+  font-size: 14px !important;
+  line-height: 32px !important;
+}
+
+/* Body */
 .ant-modal-body {
-  padding: 24px !important;
+  padding: 4px 20px 20px !important;
+  max-height: 65vh;
+  overflow-y: auto;
 }
 
+/* Custom scrollbar for modal body */
+.ant-modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.ant-modal-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ant-modal-body::-webkit-scrollbar-thumb {
+  background: var(--neutral-300);
+  border-radius: 3px;
+}
+
+.ant-modal-body::-webkit-scrollbar-thumb:hover {
+  background: var(--neutral-400);
+}
+
+/* Footer */
 .ant-modal-footer {
-  border-top: 1px solid var(--neutral-100) !important;
-  padding: 16px 24px !important;
+  background: var(--neutral-50) !important;
+  border-top: 1px solid var(--neutral-200) !important;
+  padding: 12px 20px !important;
+  margin: 0 !important;
+}
+
+.ant-modal-footer .ant-btn {
+  min-width: 90px;
+  height: 40px !important;
+  border-radius: 10px !important;
+  font-weight: 500 !important;
+}
+
+.ant-modal-footer .ant-btn-default {
+  border-color: var(--neutral-300) !important;
+  color: var(--neutral-600) !important;
+}
+
+.ant-modal-footer .ant-btn-default:hover {
+  border-color: var(--neutral-400) !important;
+  color: var(--neutral-800) !important;
+  background: var(--neutral-100) !important;
+}
+
+.ant-modal-footer .ant-btn-primary {
+  background: var(--primary-500) !important;
+  border-color: var(--primary-500) !important;
+  box-shadow: 0 2px 8px rgba(42, 146, 153, 0.3) !important;
+}
+
+.ant-modal-footer .ant-btn-primary:hover {
+  background: var(--primary-600) !important;
+  border-color: var(--primary-600) !important;
+  box-shadow: 0 4px 12px rgba(42, 146, 153, 0.4) !important;
+}
+
+/* Confirm Modal */
+.ant-modal-confirm .ant-modal-body {
+  padding: 28px !important;
+}
+
+.ant-modal-confirm-title {
+  font-weight: 600 !important;
+  font-size: 18px !important;
+  color: var(--neutral-900) !important;
+}
+
+.ant-modal-confirm-content {
+  color: var(--neutral-600) !important;
+  margin-top: 8px !important;
+}
+
+.ant-modal-confirm-btns {
+  margin-top: 24px !important;
+}
+
+.ant-modal-confirm-btns .ant-btn {
+  min-width: 80px;
+  height: 38px !important;
+  border-radius: 8px !important;
 }
 
 /* Form */
