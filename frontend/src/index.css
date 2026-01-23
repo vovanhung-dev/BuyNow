@@ -1248,3 +1248,204 @@ body {
 .loading-spinner .ant-spin-dot-item {
   background: var(--primary-500);
 }
+
+/* ================================================
+   RESPONSIVE - Mobile First
+   ================================================ */
+
+/* Mobile: < 768px */
+@media (max-width: 767px) {
+  /* Layout */
+  .main-content {
+    margin: 12px !important;
+    padding: 0 !important;
+  }
+
+  .content-card {
+    padding: 16px !important;
+    border-radius: 12px !important;
+  }
+
+  /* Header */
+  .main-header {
+    padding: 0 12px !important;
+  }
+
+  .user-dropdown .user-name {
+    display: none;
+  }
+
+  /* Page Header */
+  .page-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch !important;
+  }
+
+  .page-title {
+    font-size: 20px !important;
+  }
+
+  /* Tables */
+  .ant-table {
+    font-size: 13px;
+  }
+
+  .ant-table-thead > tr > th {
+    padding: 10px 8px !important;
+    font-size: 12px;
+  }
+
+  .ant-table-tbody > tr > td {
+    padding: 10px 8px !important;
+  }
+
+  /* Cards */
+  .ant-card {
+    border-radius: 12px !important;
+  }
+
+  .ant-card-body {
+    padding: 16px !important;
+  }
+
+  /* Modal */
+  .ant-modal {
+    max-width: calc(100vw - 24px) !important;
+    margin: 12px auto !important;
+  }
+
+  .ant-modal-content {
+    border-radius: 12px !important;
+  }
+
+  .ant-modal-body {
+    padding: 12px 16px 16px !important;
+    max-height: 60vh;
+  }
+
+  .ant-modal-footer {
+    padding: 12px 16px !important;
+  }
+
+  /* Form */
+  .ant-form-item {
+    margin-bottom: 16px !important;
+  }
+
+  .ant-form-item-label {
+    padding-bottom: 4px !important;
+  }
+
+  .ant-form-item-label > label {
+    font-size: 13px !important;
+  }
+
+  /* Buttons */
+  .ant-btn {
+    height: 38px !important;
+    padding: 0 14px !important;
+    font-size: 13px !important;
+  }
+
+  .ant-btn-sm {
+    height: 30px !important;
+    padding: 0 10px !important;
+  }
+
+  /* Input */
+  .ant-input,
+  .ant-input-affix-wrapper,
+  .ant-picker,
+  .ant-select-selector {
+    font-size: 14px !important;
+  }
+
+  /* Stats Cards */
+  .ant-statistic-title {
+    font-size: 12px !important;
+  }
+
+  .ant-statistic-content {
+    font-size: 20px !important;
+  }
+
+  /* Sidebar - hide on mobile by default */
+  .ant-layout-sider {
+    position: fixed !important;
+    z-index: 200;
+    height: 100vh;
+  }
+
+  .ant-layout-sider-collapsed {
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    flex: 0 0 0 !important;
+  }
+
+  /* Pagination */
+  .ant-pagination {
+    justify-content: center;
+  }
+
+  .ant-pagination-total-text {
+    display: none;
+  }
+
+  .ant-pagination-options {
+    display: none;
+  }
+
+  /* Descriptions */
+  .ant-descriptions-item-label {
+    font-size: 13px !important;
+    color: var(--neutral-500) !important;
+  }
+
+  .ant-descriptions-item-content {
+    font-size: 14px !important;
+  }
+
+  /* Login Page */
+  .login-container {
+    flex-direction: column;
+  }
+
+  .login-left {
+    display: none;
+  }
+
+  .login-right {
+    width: 100%;
+    padding: 24px;
+  }
+
+  .login-form-wrapper {
+    padding: 24px;
+  }
+
+  .login-form-title {
+    font-size: 24px !important;
+  }
+}
+
+/* Tablet: 768px - 1024px */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .main-content {
+    margin: 16px !important;
+  }
+
+  .content-card {
+    padding: 20px !important;
+  }
+
+  /* Login */
+  .login-left {
+    width: 40%;
+  }
+
+  .login-right {
+    width: 60%;
+  }
+}
