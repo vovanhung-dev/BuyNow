@@ -85,14 +85,31 @@ const ProductList = () => {
   const formatPrice = (val) => Number(val).toLocaleString('vi-VN') + ' đ'
 
   const columns = [
-    { title: 'SKU', dataIndex: 'sku', key: 'sku', width: 100 },
-    { title: 'Tên sản phẩm', dataIndex: 'name', key: 'name' },
-    { title: 'ĐVT', dataIndex: 'unit', key: 'unit', width: 80 },
+    { title: 'SKU', dataIndex: 'sku', key: 'sku', width: 110, fixed: 'left' },
+    { title: 'Tên sản phẩm', dataIndex: 'name', key: 'name', width: 200, fixed: 'left' },
+    { title: 'ĐVT', dataIndex: 'unit', key: 'unit', width: 70, align: 'center' },
     {
       title: 'Giá bán buôn',
       dataIndex: 'wholesalePrice',
       key: 'wholesalePrice',
       width: 120,
+      align: 'right',
+      render: formatPrice,
+    },
+    {
+      title: 'Giá ĐL vừa',
+      dataIndex: 'mediumDealerPrice',
+      key: 'mediumDealerPrice',
+      width: 120,
+      align: 'right',
+      render: formatPrice,
+    },
+    {
+      title: 'Giá ĐL lớn',
+      dataIndex: 'largeDealerPrice',
+      key: 'largeDealerPrice',
+      width: 120,
+      align: 'right',
       render: formatPrice,
     },
     {
@@ -100,13 +117,15 @@ const ProductList = () => {
       dataIndex: 'retailPrice',
       key: 'retailPrice',
       width: 120,
+      align: 'right',
       render: formatPrice,
     },
     {
       title: 'Tồn kho',
       dataIndex: 'stock',
       key: 'stock',
-      width: 100,
+      width: 90,
+      align: 'center',
       render: (val, record) => (
         <Space>
           <span style={{ color: val <= record.minStock ? 'red' : 'inherit', fontWeight: val <= record.minStock ? 'bold' : 'normal' }}>
@@ -121,12 +140,14 @@ const ProductList = () => {
       dataIndex: 'active',
       key: 'active',
       width: 100,
+      align: 'center',
       render: (val) => <Tag color={val ? 'green' : 'red'}>{val ? 'Hoạt động' : 'Ngừng'}</Tag>,
     },
     {
-      title: 'Thao tác',
+      title: '',
       key: 'actions',
-      width: 100,
+      width: 90,
+      fixed: 'right',
       render: (_, record) => (
         <Space>
           <Button size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)} />
@@ -171,7 +192,7 @@ const ProductList = () => {
           showTotal: (total) => `Tổng ${total} sản phẩm`,
           onChange: (page) => setPagination((prev) => ({ ...prev, current: page })),
         }}
-        scroll={{ x: 1000 }}
+        scroll={{ x: 1200 }}
       />
 
       <Modal
