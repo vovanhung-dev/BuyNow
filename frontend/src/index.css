@@ -158,6 +158,158 @@ body {
   font-size: 16px !important;
 }
 
+/* ================================================
+   FORM INPUTS - Refined & Elegant
+   ================================================ */
+
+/* Base Input */
+.ant-input {
+  border-radius: var(--radius-sm) !important;
+  border-color: var(--neutral-200) !important;
+  transition: all var(--transition-fast) !important;
+  padding: 10px 14px !important;
+  font-size: 14px !important;
+}
+
+.ant-input:hover {
+  border-color: var(--primary-300) !important;
+}
+
+.ant-input:focus,
+.ant-input-focused {
+  border-color: var(--primary-500) !important;
+  box-shadow: 0 0 0 3px rgba(42, 146, 153, 0.12) !important;
+}
+
+/* Input with prefix/suffix icons */
+.ant-input-affix-wrapper {
+  border-radius: var(--radius-sm) !important;
+  border-color: var(--neutral-200) !important;
+  transition: all var(--transition-fast) !important;
+  padding: 8px 14px !important;
+}
+
+.ant-input-affix-wrapper .ant-input {
+  padding: 0 !important;
+}
+
+.ant-input-affix-wrapper:hover {
+  border-color: var(--primary-300) !important;
+}
+
+.ant-input-affix-wrapper:focus,
+.ant-input-affix-wrapper-focused {
+  border-color: var(--primary-500) !important;
+  box-shadow: 0 0 0 3px rgba(42, 146, 153, 0.12) !important;
+}
+
+/* TextArea */
+.ant-input-textarea .ant-input {
+  border-radius: var(--radius-sm) !important;
+}
+
+/* Select */
+.ant-select:not(.ant-select-customize-input) .ant-select-selector {
+  border-radius: var(--radius-sm) !important;
+  border-color: var(--neutral-200) !important;
+  transition: all var(--transition-fast) !important;
+  padding: 4px 14px !important;
+  height: 42px !important;
+}
+
+.ant-select-single .ant-select-selector .ant-select-selection-item,
+.ant-select-single .ant-select-selector .ant-select-selection-placeholder {
+  line-height: 32px !important;
+}
+
+.ant-select:hover .ant-select-selector {
+  border-color: var(--primary-300) !important;
+}
+
+.ant-select-focused .ant-select-selector {
+  border-color: var(--primary-500) !important;
+  box-shadow: 0 0 0 3px rgba(42, 146, 153, 0.12) !important;
+}
+
+.ant-select-dropdown {
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-lg) !important;
+  padding: 6px !important;
+}
+
+.ant-select-item {
+  border-radius: var(--radius-sm) !important;
+  transition: all var(--transition-fast) !important;
+}
+
+.ant-select-item-option-selected {
+  background: var(--primary-50) !important;
+  font-weight: 500;
+}
+
+.ant-select-item-option-active {
+  background: var(--neutral-100) !important;
+}
+
+/* Date Picker */
+.ant-picker {
+  border-radius: var(--radius-sm) !important;
+  border-color: var(--neutral-200) !important;
+  transition: all var(--transition-fast) !important;
+  padding: 8px 14px !important;
+}
+
+.ant-picker:hover {
+  border-color: var(--primary-300) !important;
+}
+
+.ant-picker-focused {
+  border-color: var(--primary-500) !important;
+  box-shadow: 0 0 0 3px rgba(42, 146, 153, 0.12) !important;
+}
+
+.ant-picker-dropdown {
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+
+/* Input Number */
+.ant-input-number {
+  border-radius: var(--radius-sm) !important;
+  border-color: var(--neutral-200) !important;
+  transition: all var(--transition-fast) !important;
+  padding: 4px 0 !important;
+}
+
+.ant-input-number-input {
+  padding: 4px 14px !important;
+  height: 32px !important;
+}
+
+.ant-input-number:hover {
+  border-color: var(--primary-300) !important;
+}
+
+.ant-input-number-focused {
+  border-color: var(--primary-500) !important;
+  box-shadow: 0 0 0 3px rgba(42, 146, 153, 0.12) !important;
+}
+
+/* Search Input */
+.ant-input-search .ant-input-wrapper {
+  border-radius: var(--radius-sm) !important;
+}
+
+.ant-input-search .ant-input-group-addon {
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0 !important;
+}
+
+/* Form Labels */
+.ant-form-item-label > label {
+  font-weight: 500;
+  color: var(--neutral-700);
+}
+
 /* Header */
 .main-header {
   background: rgba(255, 255, 255, 0.95) !important;
