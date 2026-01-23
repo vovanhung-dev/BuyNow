@@ -1,11 +1,16 @@
 import { useEffect, useState } from 'react'
 import {
-  Table, Button, Input, Space, Modal, Form, Select, message, Typography, Tag, Popconfirm
+  Table, Button, Input, Space, Modal, Form, Select, message, Tag, Popconfirm, Row, Col, Card, Tooltip
 } from 'antd'
-import { PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
+import {
+  PlusOutlined,
+  SearchOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  UserOutlined,
+  PhoneOutlined,
+} from '@ant-design/icons'
 import { customersAPI, customerGroupsAPI } from '../../services/api'
-
-const { Title } = Typography
 
 const CustomerList = () => {
   const [customers, setCustomers] = useState([])
@@ -89,43 +94,132 @@ const CustomerList = () => {
     }
   }
 
+  const getGroupColor = (groupCode) => {
+    const colors = {
+      DLN: { bg: '#fff7d6', text: '#e5a100' },
+      DLV: { bg: '#e6f2ff', text: '#0065ff' },
+      dailylon: { bg: '#dcf7e9', text: '#22a06b' },
+    }
+    return colors[groupCode] || { bg: '#f4f5f7', text: '#5e6c7b' }
+  }
+
   const columns = [
-    { title: 'Mã KH', dataIndex: 'code', key: 'code', width: 120 },
-    { title: 'Tên khách hàng', dataIndex: 'name', key: 'name' },
+    {
+      title: 'Mã KH',
+      dataIndex: 'code',
+      key: 'code',
+      width: 130,
+      render: (code) => (
+        <span style={{
+          fontFamily: 'monospace',
+          fontSize: 13,
+          color: '#134e52',
+          fontWeight: 500,
+        }}>
+          {code}
+        </span>
+      ),
+    },
+    {
+      title: 'Tên khách hàng',
+      dataIndex: 'name',
+      key: 'name',
+      render: (name, record) => (
+        <div>
+          <div style={{ fontWeight: 500, color: '#2d3640' }}>{name}</div>
+          {record.phone && (
+            <div style={{ fontSize: 12, color: '#788492', marginTop: 2 }}>
+              <PhoneOutlined style={{ marginRight: 4 }} />
+              {record.phone}
+            </div>
+          )}
+        </div>
+      ),
+    },
     {
       title: 'Nhóm KH',
       dataIndex: 'customerGroup',
       key: 'customerGroup',
-      render: (group) => group ? <Tag color="blue">{group.name}</Tag> : '-',
+      width: 140,
+      render: (group) => {
+        if (!group) return <span style={{ color: '#98a4b3' }}>—</span>
+        const color = getGroupColor(group.code)
+        return (
+          <Tag style={{
+            background: color.bg,
+            color: color.text,
+            border: 'none',
+            borderRadius: 20,
+            padding: '4px 12px',
+            fontWeight: 500,
+          }}>
+            {group.name}
+          </Tag>
+        )
+      },
     },
-    { title: 'Điện thoại', dataIndex: 'phone', key: 'phone', width: 120 },
-    { title: 'Địa chỉ', dataIndex: 'address', key: 'address', ellipsis: true },
+    {
+      title: 'Địa chỉ',
+      dataIndex: 'address',
+      key: 'address',
+      ellipsis: true,
+      render: (address, record) => (
+        <Tooltip title={[address, record.ward, record.district].filter(Boolean).join(', ')}>
+          <span style={{ color: '#5e6c7b' }}>
+            {address || <span style={{ color: '#c1c9d2' }}>—</span>}
+          </span>
+        </Tooltip>
+      ),
+    },
     {
       title: 'Công nợ',
       dataIndex: 'totalDebt',
       key: 'totalDebt',
-      width: 120,
+      width: 140,
+      align: 'right',
       render: (val) => {
         const debt = Number(val)
         return (
-          <span style={{ color: debt > 0 ? 'red' : 'inherit' }}>
+          <span style={{
+            fontWeight: 600,
+            color: debt > 0 ? '#de350b' : '#22a06b',
+          }}>
             {debt.toLocaleString('vi-VN')} đ
           </span>
         )
       },
     },
     {
-      title: 'Thao tác',
+      title: '',
       key: 'actions',
       width: 100,
       render: (_, record) => (
-        <Space>
-          <Button size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)} />
+        <Space size={4}>
+          <Tooltip title="Chỉnh sửa">
+            <Button
+              type="text"
+              size="small"
+              icon={<EditOutlined />}
+              onClick={() => handleEdit(record)}
+              style={{ color: '#2a9299' }}
+            />
+          </Tooltip>
           <Popconfirm
-            title="Xác nhận xóa khách hàng này?"
+            title="Xóa khách hàng"
+            description="Bạn có chắc muốn xóa khách hàng này?"
             onConfirm={() => handleDelete(record.id)}
+            okText="Xóa"
+            cancelText="Hủy"
+            okButtonProps={{ danger: true }}
           >
-            <Button size="small" danger icon={<DeleteOutlined />} />
+            <Tooltip title="Xóa">
+              <Button
+                type="text"
+                size="small"
+                danger
+                icon={<DeleteOutlined />}
+              />
+            </Tooltip>
           </Popconfirm>
         </Space>
       ),
@@ -133,24 +227,58 @@ const CustomerList = () => {
   ]
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-        <Title level={4} style={{ margin: 0 }}>Khách hàng</Title>
-        <Space>
+    <div className="animate-fade-in">
+      {/* Page Header */}
+      <div className="page-header">
+        <h1 className="page-title">Khách hàng</h1>
+        <Space size={12}>
           <Input
-            placeholder="Tìm kiếm..."
-            prefix={<SearchOutlined />}
+            placeholder="Tìm theo tên, SĐT..."
+            prefix={<SearchOutlined style={{ color: '#98a4b3' }} />}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{ width: 250 }}
+            style={{ width: 280 }}
             allowClear
           />
-          <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-            Thêm mới
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={handleCreate}
+          >
+            Thêm khách hàng
           </Button>
         </Space>
       </div>
 
+      {/* Stats Summary */}
+      <Row gutter={16} style={{ marginBottom: 24 }}>
+        <Col span={8}>
+          <Card size="small" style={{ textAlign: 'center' }}>
+            <div style={{ color: '#788492', fontSize: 13, marginBottom: 4 }}>Tổng khách hàng</div>
+            <div style={{ fontSize: 24, fontWeight: 600, color: '#134e52' }}>
+              {pagination.total}
+            </div>
+          </Card>
+        </Col>
+        <Col span={8}>
+          <Card size="small" style={{ textAlign: 'center' }}>
+            <div style={{ color: '#788492', fontSize: 13, marginBottom: 4 }}>Nhóm khách hàng</div>
+            <div style={{ fontSize: 24, fontWeight: 600, color: '#2a9299' }}>
+              {groups.length}
+            </div>
+          </Card>
+        </Col>
+        <Col span={8}>
+          <Card size="small" style={{ textAlign: 'center' }}>
+            <div style={{ color: '#788492', fontSize: 13, marginBottom: 4 }}>Có công nợ</div>
+            <div style={{ fontSize: 24, fontWeight: 600, color: '#de350b' }}>
+              {customers.filter(c => Number(c.totalDebt) > 0).length}
+            </div>
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Data Table */}
       <Table
         dataSource={customers}
         columns={columns}
@@ -159,48 +287,88 @@ const CustomerList = () => {
         pagination={{
           ...pagination,
           showSizeChanger: true,
-          showTotal: (total) => `Tổng ${total} khách hàng`,
-          onChange: (page) => setPagination((prev) => ({ ...prev, current: page })),
+          showTotal: (total, range) => (
+            <span style={{ color: '#788492' }}>
+              Hiển thị {range[0]}-{range[1]} / {total} khách hàng
+            </span>
+          ),
+          onChange: (page, pageSize) => setPagination((prev) => ({
+            ...prev,
+            current: page,
+            pageSize,
+          })),
         }}
       />
 
+      {/* Modal Form */}
       <Modal
-        title={editingCustomer ? 'Sửa khách hàng' : 'Thêm khách hàng'}
+        title={
+          <Space>
+            <UserOutlined />
+            {editingCustomer ? 'Sửa khách hàng' : 'Thêm khách hàng mới'}
+          </Space>
+        }
         open={modalOpen}
         onCancel={() => setModalOpen(false)}
         onOk={() => form.submit()}
-        width={600}
+        okText={editingCustomer ? 'Cập nhật' : 'Thêm mới'}
+        cancelText="Hủy"
+        width={640}
+        destroyOnClose
       >
-        <Form form={form} layout="vertical" onFinish={handleSubmit}>
-          <Form.Item name="code" label="Mã khách hàng">
-            <Input placeholder="Tự động sinh nếu để trống" />
-          </Form.Item>
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleSubmit}
+          style={{ marginTop: 24 }}
+        >
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="code" label="Mã khách hàng">
+                <Input placeholder="Tự động sinh nếu để trống" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="customerGroupId" label="Nhóm khách hàng">
+                <Select allowClear placeholder="Chọn nhóm">
+                  {groups.map((g) => (
+                    <Select.Option key={g.id} value={g.id}>
+                      {g.name}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+
           <Form.Item
             name="name"
             label="Tên khách hàng"
-            rules={[{ required: true, message: 'Vui lòng nhập tên' }]}
+            rules={[{ required: true, message: 'Vui lòng nhập tên khách hàng' }]}
           >
-            <Input />
+            <Input placeholder="Nhập tên khách hàng" />
           </Form.Item>
-          <Form.Item name="customerGroupId" label="Nhóm khách hàng">
-            <Select allowClear placeholder="Chọn nhóm">
-              {groups.map((g) => (
-                <Select.Option key={g.id} value={g.id}>{g.name}</Select.Option>
-              ))}
-            </Select>
+
+          <Form.Item name="phone" label="Số điện thoại">
+            <Input placeholder="Nhập số điện thoại" />
           </Form.Item>
-          <Form.Item name="phone" label="Điện thoại">
-            <Input />
-          </Form.Item>
+
           <Form.Item name="address" label="Địa chỉ">
-            <Input.TextArea rows={2} />
+            <Input.TextArea rows={2} placeholder="Nhập địa chỉ chi tiết" />
           </Form.Item>
-          <Form.Item name="district" label="Quận/Huyện">
-            <Input />
-          </Form.Item>
-          <Form.Item name="ward" label="Phường/Xã">
-            <Input />
-          </Form.Item>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="district" label="Quận/Huyện">
+                <Input placeholder="Quận/Huyện" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="ward" label="Phường/Xã">
+                <Input placeholder="Phường/Xã" />
+              </Form.Item>
+            </Col>
+          </Row>
         </Form>
       </Modal>
     </div>

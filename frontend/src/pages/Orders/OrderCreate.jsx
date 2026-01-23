@@ -1,13 +1,21 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  Form, Select, DatePicker, InputNumber, Input, Button, Table, Card, Space, Typography, message, Divider
+  Form, Select, DatePicker, InputNumber, Input, Button, Table, Card, Space, message, Divider, Row, Col, Tag
 } from 'antd'
-import { PlusOutlined, DeleteOutlined, SaveOutlined } from '@ant-design/icons'
+import {
+  PlusOutlined,
+  DeleteOutlined,
+  SaveOutlined,
+  ArrowLeftOutlined,
+  UserOutlined,
+  PhoneOutlined,
+  EnvironmentOutlined,
+  ShoppingCartOutlined,
+  TagOutlined,
+} from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { customersAPI, productsAPI, ordersAPI } from '../../services/api'
-
-const { Title, Text } = Typography
 
 const OrderCreate = () => {
   const navigate = useNavigate()
@@ -42,7 +50,6 @@ const OrderCreate = () => {
   const handleCustomerChange = (customerId) => {
     const customer = customers.find((c) => c.id === customerId)
     setSelectedCustomer(customer)
-    // Recalculate prices based on customer group
     if (orderItems.length > 0) {
       const priceType = customer?.customerGroup?.priceType || 'RETAIL'
       const newItems = orderItems.map((item) => {
@@ -66,11 +73,20 @@ const OrderCreate = () => {
     }
   }
 
+  const getPriceLabel = (priceType) => {
+    const labels = {
+      WHOLESALE: 'Giá bán buôn',
+      MEDIUM_DEALER: 'Giá đại lý vừa',
+      LARGE_DEALER: 'Giá đại lý lớn',
+      RETAIL: 'Giá bán lẻ',
+    }
+    return labels[priceType] || 'Giá bán lẻ'
+  }
+
   const handleAddProduct = (productId) => {
     const product = products.find((p) => p.id === productId)
     if (!product) return
 
-    // Check if already added
     if (orderItems.find((item) => item.productId === productId)) {
       message.warning('Sản phẩm đã có trong đơn hàng')
       return
@@ -152,22 +168,71 @@ const OrderCreate = () => {
   const formatPrice = (val) => Number(val).toLocaleString('vi-VN') + ' đ'
 
   const columns = [
-    { title: 'STT', key: 'stt', width: 50, render: (_, __, i) => i + 1 },
-    { title: 'SKU', dataIndex: 'sku', key: 'sku', width: 100 },
-    { title: 'Tên sản phẩm', dataIndex: 'name', key: 'name' },
-    { title: 'ĐVT', dataIndex: 'unit', key: 'unit', width: 70 },
     {
-      title: 'SL',
+      title: 'STT',
+      key: 'stt',
+      width: 60,
+      align: 'center',
+      render: (_, __, i) => (
+        <span style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: 28,
+          height: 28,
+          borderRadius: '50%',
+          background: '#eef9fa',
+          color: '#2a9299',
+          fontWeight: 600,
+          fontSize: 13,
+        }}>
+          {i + 1}
+        </span>
+      ),
+    },
+    {
+      title: 'SKU',
+      dataIndex: 'sku',
+      key: 'sku',
+      width: 110,
+      render: (sku) => (
+        <span style={{ fontFamily: 'monospace', fontSize: 12, color: '#788492' }}>
+          {sku}
+        </span>
+      ),
+    },
+    {
+      title: 'Tên sản phẩm',
+      dataIndex: 'name',
+      key: 'name',
+      render: (name) => (
+        <span style={{ fontWeight: 500, color: '#2d3640' }}>{name}</span>
+      ),
+    },
+    {
+      title: 'ĐVT',
+      dataIndex: 'unit',
+      key: 'unit',
+      width: 80,
+      render: (unit) => (
+        <Tag style={{ margin: 0 }}>{unit || '—'}</Tag>
+      ),
+    },
+    {
+      title: 'Số lượng',
       dataIndex: 'quantity',
       key: 'quantity',
-      width: 80,
+      width: 100,
       render: (val, _, index) => (
         <InputNumber
           min={1}
           value={val}
           onChange={(v) => handleQuantityChange(index, v)}
           size="small"
-          style={{ width: 60 }}
+          style={{
+            width: 70,
+            borderRadius: 8,
+          }}
         />
       ),
     },
@@ -175,15 +240,23 @@ const OrderCreate = () => {
       title: 'Đơn giá',
       dataIndex: 'unitPrice',
       key: 'unitPrice',
-      width: 120,
-      render: formatPrice,
+      width: 130,
+      align: 'right',
+      render: (val) => (
+        <span style={{ color: '#788492' }}>{formatPrice(val)}</span>
+      ),
     },
     {
       title: 'Thành tiền',
       dataIndex: 'total',
       key: 'total',
-      width: 120,
-      render: formatPrice,
+      width: 140,
+      align: 'right',
+      render: (val) => (
+        <span style={{ fontWeight: 600, color: '#2a9299' }}>
+          {formatPrice(val)}
+        </span>
+      ),
     },
     {
       title: '',
@@ -191,6 +264,7 @@ const OrderCreate = () => {
       width: 50,
       render: (_, __, index) => (
         <Button
+          type="text"
           size="small"
           danger
           icon={<DeleteOutlined />}
@@ -201,149 +275,313 @@ const OrderCreate = () => {
   ]
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-        <Title level={4} style={{ margin: 0 }}>Tạo đơn hàng</Title>
+    <div className="animate-fade-in order-form">
+      {/* Page Header */}
+      <div className="page-header">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <Button
+            icon={<ArrowLeftOutlined />}
+            onClick={() => navigate('/orders')}
+          />
+          <h1 className="page-title" style={{ margin: 0 }}>Tạo đơn hàng mới</h1>
+        </div>
         <Space>
-          <Button onClick={() => navigate('/orders')}>Hủy</Button>
-          <Button type="primary" icon={<SaveOutlined />} onClick={handleSubmit} loading={submitting}>
+          <Button onClick={() => navigate('/orders')}>
+            Hủy bỏ
+          </Button>
+          <Button
+            type="primary"
+            icon={<SaveOutlined />}
+            onClick={handleSubmit}
+            loading={submitting}
+          >
             Lưu đơn hàng
           </Button>
         </Space>
       </div>
 
-      <Card title="Thông tin khách hàng" style={{ marginBottom: 16 }}>
-        <Form form={form} layout="vertical">
-          <Space style={{ display: 'flex' }} wrap>
-            <Form.Item
-              name="customerId"
-              label="Khách hàng"
-              rules={[{ required: true, message: 'Vui lòng chọn khách hàng' }]}
-            >
+      <Row gutter={24}>
+        {/* Left Column - Customer & Products */}
+        <Col xs={24} lg={16}>
+          {/* Customer Info Card */}
+          <Card
+            title={
+              <Space>
+                <UserOutlined style={{ color: '#2a9299' }} />
+                <span>Thông tin khách hàng</span>
+              </Space>
+            }
+            style={{ marginBottom: 24 }}
+          >
+            <Form form={form} layout="vertical">
+              <Row gutter={16}>
+                <Col xs={24} md={16}>
+                  <Form.Item
+                    name="customerId"
+                    label="Khách hàng"
+                    rules={[{ required: true, message: 'Vui lòng chọn khách hàng' }]}
+                  >
+                    <Select
+                      showSearch
+                      placeholder="Tìm và chọn khách hàng..."
+                      optionFilterProp="children"
+                      onChange={handleCustomerChange}
+                      loading={loading}
+                      filterOption={(input, option) =>
+                        option.children.toLowerCase().includes(input.toLowerCase())
+                      }
+                    >
+                      {customers.map((c) => (
+                        <Select.Option key={c.id} value={c.id}>
+                          {c.name} - {c.code}
+                        </Select.Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                </Col>
+                <Col xs={24} md={8}>
+                  <Form.Item
+                    name="orderDate"
+                    label="Ngày đặt hàng"
+                    initialValue={dayjs()}
+                  >
+                    <DatePicker
+                      format="DD/MM/YYYY"
+                      style={{ width: '100%' }}
+                    />
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              {selectedCustomer && (
+                <div style={{
+                  background: 'linear-gradient(135deg, #eef9fa, #d4f0f2)',
+                  padding: 20,
+                  borderRadius: 12,
+                  marginTop: 8,
+                }}>
+                  <Row gutter={24}>
+                    <Col xs={24} md={8}>
+                      <div style={{ marginBottom: 12 }}>
+                        <div style={{ fontSize: 12, color: '#788492', marginBottom: 4 }}>
+                          <PhoneOutlined style={{ marginRight: 6 }} />
+                          Số điện thoại
+                        </div>
+                        <div style={{ fontWeight: 500, color: '#134e52' }}>
+                          {selectedCustomer.phone || '—'}
+                        </div>
+                      </div>
+                    </Col>
+                    <Col xs={24} md={8}>
+                      <div style={{ marginBottom: 12 }}>
+                        <div style={{ fontSize: 12, color: '#788492', marginBottom: 4 }}>
+                          <TagOutlined style={{ marginRight: 6 }} />
+                          Nhóm khách hàng
+                        </div>
+                        <div style={{ fontWeight: 500 }}>
+                          <Tag color="processing" style={{ margin: 0 }}>
+                            {selectedCustomer.customerGroup?.name || 'Khách lẻ'}
+                          </Tag>
+                        </div>
+                      </div>
+                    </Col>
+                    <Col xs={24} md={8}>
+                      <div style={{ marginBottom: 12 }}>
+                        <div style={{ fontSize: 12, color: '#788492', marginBottom: 4 }}>
+                          <TagOutlined style={{ marginRight: 6 }} />
+                          Áp dụng giá
+                        </div>
+                        <div style={{ fontWeight: 500, color: '#22a06b' }}>
+                          {getPriceLabel(selectedCustomer.customerGroup?.priceType)}
+                        </div>
+                      </div>
+                    </Col>
+                    <Col xs={24}>
+                      <div>
+                        <div style={{ fontSize: 12, color: '#788492', marginBottom: 4 }}>
+                          <EnvironmentOutlined style={{ marginRight: 6 }} />
+                          Địa chỉ
+                        </div>
+                        <div style={{ fontWeight: 500, color: '#134e52' }}>
+                          {[selectedCustomer.address, selectedCustomer.ward, selectedCustomer.district]
+                            .filter(Boolean).join(', ') || '—'}
+                        </div>
+                      </div>
+                    </Col>
+                  </Row>
+                </div>
+              )}
+            </Form>
+          </Card>
+
+          {/* Products Card */}
+          <Card
+            title={
+              <Space>
+                <ShoppingCartOutlined style={{ color: '#2a9299' }} />
+                <span>Sản phẩm</span>
+                {orderItems.length > 0 && (
+                  <Tag color="processing">{orderItems.length} sản phẩm</Tag>
+                )}
+              </Space>
+            }
+          >
+            <div style={{ marginBottom: 16 }}>
               <Select
                 showSearch
-                placeholder="Chọn khách hàng"
-                style={{ width: 300 }}
+                placeholder="Tìm và thêm sản phẩm..."
+                style={{ width: '100%' }}
                 optionFilterProp="children"
-                onChange={handleCustomerChange}
+                onChange={handleAddProduct}
+                value={null}
                 loading={loading}
+                size="large"
                 filterOption={(input, option) =>
                   option.children.toLowerCase().includes(input.toLowerCase())
                 }
+                suffixIcon={<PlusOutlined style={{ color: '#2a9299' }} />}
               >
-                {customers.map((c) => (
-                  <Select.Option key={c.id} value={c.id}>
-                    {c.name} - {c.code}
+                {products.map((p) => (
+                  <Select.Option key={p.id} value={p.id}>
+                    {p.sku} - {p.name}
                   </Select.Option>
                 ))}
               </Select>
-            </Form.Item>
+            </div>
 
-            <Form.Item name="orderDate" label="Ngày" initialValue={dayjs()}>
-              <DatePicker format="DD/MM/YYYY" />
-            </Form.Item>
-          </Space>
+            {orderItems.length === 0 ? (
+              <div style={{
+                textAlign: 'center',
+                padding: '48px 0',
+                color: '#98a4b3',
+              }}>
+                <ShoppingCartOutlined style={{ fontSize: 48, marginBottom: 16 }} />
+                <p style={{ margin: 0 }}>Chưa có sản phẩm nào</p>
+                <p style={{ margin: '4px 0 0', fontSize: 13 }}>
+                  Tìm kiếm và thêm sản phẩm vào đơn hàng
+                </p>
+              </div>
+            ) : (
+              <Table
+                dataSource={orderItems}
+                columns={columns}
+                rowKey="productId"
+                pagination={false}
+                size="middle"
+              />
+            )}
+          </Card>
+        </Col>
 
-          {selectedCustomer && (
-            <div style={{ background: '#f5f5f5', padding: 12, borderRadius: 6 }}>
-              <Space size="large">
-                <Text>ĐT: {selectedCustomer.phone || '-'}</Text>
-                <Text>Địa chỉ: {selectedCustomer.address || '-'}</Text>
-                <Text>
-                  Nhóm: {selectedCustomer.customerGroup?.name || 'Khách lẻ'}
-                </Text>
+        {/* Right Column - Summary */}
+        <Col xs={24} lg={8}>
+          <Card
+            title={
+              <Space>
+                <TagOutlined style={{ color: '#d4a853' }} />
+                <span>Tổng cộng</span>
               </Space>
-            </div>
-          )}
-        </Form>
-      </Card>
-
-      <Card title="Danh sách sản phẩm" style={{ marginBottom: 16 }}>
-        <Space style={{ marginBottom: 16 }}>
-          <Select
-            showSearch
-            placeholder="Chọn sản phẩm để thêm"
-            style={{ width: 400 }}
-            optionFilterProp="children"
-            onChange={handleAddProduct}
-            value={null}
-            loading={loading}
-            filterOption={(input, option) =>
-              option.children.toLowerCase().includes(input.toLowerCase())
             }
+            style={{ position: 'sticky', top: 88 }}
           >
-            {products.map((p) => (
-              <Select.Option key={p.id} value={p.id}>
-                {p.sku} - {p.name}
-              </Select.Option>
-            ))}
-          </Select>
-        </Space>
+            <Form form={form} layout="vertical">
+              <div className="total-section">
+                {/* Subtotal */}
+                <div className="total-row">
+                  <span style={{ color: '#788492' }}>Tổng tiền hàng</span>
+                  <span style={{ fontWeight: 500 }}>{formatPrice(totals.subtotal)}</span>
+                </div>
 
-        <Table
-          dataSource={orderItems}
-          columns={columns}
-          rowKey="productId"
-          pagination={false}
-          size="small"
-        />
-      </Card>
+                {/* Discount */}
+                <div className="total-row" style={{ alignItems: 'flex-start' }}>
+                  <span style={{ color: '#788492', paddingTop: 8 }}>Chiết khấu</span>
+                  <Form.Item name="discount" noStyle initialValue={0}>
+                    <InputNumber
+                      min={0}
+                      formatter={(val) => `${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                      parser={(val) => val.replace(/\,/g, '')}
+                      style={{ width: 140 }}
+                      onChange={() => form.validateFields()}
+                      addonAfter="đ"
+                    />
+                  </Form.Item>
+                </div>
 
-      <Card title="Tổng cộng">
-        <Form form={form} layout="vertical">
-          <Space direction="vertical" style={{ width: '100%' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Text>Tổng tiền hàng:</Text>
-              <Text strong>{formatPrice(totals.subtotal)}</Text>
-            </div>
+                <Divider style={{ margin: '16px 0' }} />
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text>Chiết khấu:</Text>
-              <Form.Item name="discount" noStyle initialValue={0}>
-                <InputNumber
-                  min={0}
-                  formatter={(val) => `${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                  parser={(val) => val.replace(/\,/g, '')}
-                  style={{ width: 150 }}
-                  onChange={() => form.validateFields()}
+                {/* Grand Total */}
+                <div className="total-row grand-total">
+                  <span className="label">Tổng thanh toán</span>
+                  <span className="value">{formatPrice(totals.total)}</span>
+                </div>
+
+                {/* Payment */}
+                <div className="total-row" style={{ alignItems: 'flex-start', marginTop: 16 }}>
+                  <span style={{ color: '#788492', paddingTop: 8 }}>Thanh toán</span>
+                  <Form.Item name="paidAmount" noStyle initialValue={0}>
+                    <InputNumber
+                      min={0}
+                      max={totals.total}
+                      formatter={(val) => `${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                      parser={(val) => val.replace(/\,/g, '')}
+                      style={{ width: 140 }}
+                      onChange={() => form.validateFields()}
+                      addonAfter="đ"
+                    />
+                  </Form.Item>
+                </div>
+
+                {/* Debt Amount */}
+                <div className={`debt-amount ${totals.debtAmount <= 0 ? 'paid' : ''}`}>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}>
+                    <span style={{
+                      fontWeight: 500,
+                      color: totals.debtAmount > 0 ? '#de350b' : '#22a06b',
+                    }}>
+                      {totals.debtAmount > 0 ? 'Còn nợ' : 'Đã thanh toán đủ'}
+                    </span>
+                    <span style={{
+                      fontWeight: 700,
+                      fontSize: 18,
+                      color: totals.debtAmount > 0 ? '#de350b' : '#22a06b',
+                    }}>
+                      {formatPrice(Math.abs(totals.debtAmount))}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <Divider />
+
+              {/* Note */}
+              <Form.Item name="note" label="Ghi chú">
+                <Input.TextArea
+                  rows={3}
+                  placeholder="Ghi chú cho đơn hàng..."
+                  style={{ resize: 'none' }}
                 />
               </Form.Item>
-            </div>
 
-            <Divider style={{ margin: '8px 0' }} />
-
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Text strong style={{ fontSize: 16 }}>Tổng thanh toán:</Text>
-              <Text strong style={{ fontSize: 16, color: '#1890ff' }}>{formatPrice(totals.total)}</Text>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text>Thanh toán:</Text>
-              <Form.Item name="paidAmount" noStyle initialValue={0}>
-                <InputNumber
-                  min={0}
-                  max={totals.total}
-                  formatter={(val) => `${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                  parser={(val) => val.replace(/\,/g, '')}
-                  style={{ width: 150 }}
-                  onChange={() => form.validateFields()}
-                />
-              </Form.Item>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Text>Còn nợ:</Text>
-              <Text style={{ color: totals.debtAmount > 0 ? 'red' : 'green' }}>
-                {formatPrice(totals.debtAmount)}
-              </Text>
-            </div>
-
-            <Form.Item name="note" label="Ghi chú">
-              <Input.TextArea rows={2} />
-            </Form.Item>
-          </Space>
-        </Form>
-      </Card>
+              {/* Actions */}
+              <Button
+                type="primary"
+                size="large"
+                block
+                icon={<SaveOutlined />}
+                onClick={handleSubmit}
+                loading={submitting}
+                disabled={orderItems.length === 0 || !selectedCustomer}
+              >
+                Tạo đơn hàng
+              </Button>
+            </Form>
+          </Card>
+        </Col>
+      </Row>
     </div>
   )
 }
