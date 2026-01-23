@@ -1,12 +1,16 @@
 import { useEffect, useState } from 'react'
-import { Table, DatePicker, Space, Typography, message, Tag } from 'antd'
+import { Table, DatePicker, Space, Typography, message, Tag, Card, Grid } from 'antd'
+import { ClockCircleOutlined, UserOutlined, FileTextOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { paymentsAPI } from '../../services/api'
 
 const { Title } = Typography
 const { RangePicker } = DatePicker
+const { useBreakpoint } = Grid
 
 const PaymentList = () => {
+  const screens = useBreakpoint()
+  const isMobile = !screens.md
   const [payments, setPayments] = useState([])
   const [loading, setLoading] = useState(false)
   const [dateRange, setDateRange] = useState(null)
@@ -40,6 +44,38 @@ const PaymentList = () => {
   }
 
   const formatPrice = (val) => Number(val).toLocaleString('vi-VN') + ' đ'
+
+  // Mobile Payment Card
+  const PaymentCard = ({ payment }) => (
+    <Card size="small" style={{ marginBottom: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <div style={{ fontSize: 12, color: '#788492' }}>
+            <ClockCircleOutlined style={{ marginRight: 4 }} />
+            {dayjs(payment.paymentDate).format('DD/MM/YYYY HH:mm')}
+          </div>
+          <div style={{ fontWeight: 500, marginTop: 4 }}>{payment.customer?.name || '-'}</div>
+          <div style={{ fontSize: 12, color: '#98a4b3', marginTop: 2 }}>
+            <FileTextOutlined style={{ marginRight: 4 }} />
+            {payment.order?.code || '-'}
+          </div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontWeight: 600, color: '#22a06b', fontSize: 16 }}>
+            {formatPrice(payment.amount)}
+          </div>
+          <Tag color={payment.method === 'CASH' ? 'green' : 'blue'} style={{ marginTop: 4 }}>
+            {payment.method === 'CASH' ? 'Tiền mặt' : 'Chuyển khoản'}
+          </Tag>
+        </div>
+      </div>
+      {payment.note && (
+        <div style={{ marginTop: 8, fontSize: 12, color: '#788492', fontStyle: 'italic' }}>
+          {payment.note}
+        </div>
+      )}
+    </Card>
+  )
 
   const columns = [
     {
@@ -92,37 +128,72 @@ const PaymentList = () => {
   const totalAmount = payments.reduce((sum, p) => sum + Number(p.amount), 0)
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-        <Title level={4} style={{ margin: 0 }}>Thanh toán</Title>
-        <Space>
-          <RangePicker
-            value={dateRange}
-            onChange={setDateRange}
-            format="DD/MM/YYYY"
-          />
-        </Space>
+    <div className="animate-fade-in">
+      {/* Header */}
+      <div style={{
+        display: 'flex',
+        flexDirection: isMobile ? 'column' : 'row',
+        justifyContent: 'space-between',
+        gap: 12,
+        marginBottom: 16
+      }}>
+        <Title level={4} style={{ margin: 0, fontSize: isMobile ? 18 : 24 }}>Thanh toán</Title>
+        <RangePicker
+          value={dateRange}
+          onChange={setDateRange}
+          format="DD/MM/YYYY"
+          style={{ width: isMobile ? '100%' : 'auto' }}
+        />
       </div>
 
-      <div style={{ marginBottom: 16, padding: 16, background: '#f0f5ff', borderRadius: 8 }}>
-        <Space size="large">
-          <span>Tổng số: <strong>{pagination.total}</strong> giao dịch</span>
-          <span>Tổng tiền: <strong style={{ color: 'green' }}>{formatPrice(totalAmount)}</strong></span>
-        </Space>
+      {/* Stats Summary */}
+      <div style={{
+        marginBottom: 16,
+        padding: isMobile ? 12 : 16,
+        background: '#eef9fa',
+        borderRadius: 8,
+        display: 'flex',
+        flexDirection: isMobile ? 'column' : 'row',
+        gap: isMobile ? 8 : 24,
+      }}>
+        <span style={{ fontSize: isMobile ? 13 : 14 }}>
+          Tổng số: <strong style={{ color: '#134e52' }}>{pagination.total}</strong> giao dịch
+        </span>
+        <span style={{ fontSize: isMobile ? 13 : 14 }}>
+          Tổng tiền: <strong style={{ color: '#22a06b' }}>{formatPrice(totalAmount)}</strong>
+        </span>
       </div>
 
-      <Table
-        dataSource={payments}
-        columns={columns}
-        rowKey="id"
-        loading={loading}
-        pagination={{
-          ...pagination,
-          showSizeChanger: true,
-          showTotal: (total) => `Tổng ${total} giao dịch`,
-          onChange: (page) => setPagination((prev) => ({ ...prev, current: page })),
-        }}
-      />
+      {/* Content - Table or Cards */}
+      {isMobile ? (
+        <div>
+          {loading ? (
+            <Card loading={true} />
+          ) : (
+            <>
+              {payments.map((payment) => (
+                <PaymentCard key={payment.id} payment={payment} />
+              ))}
+              <div style={{ textAlign: 'center', padding: '16px 0', color: '#888' }}>
+                Hiển thị {payments.length} / {pagination.total} giao dịch
+              </div>
+            </>
+          )}
+        </div>
+      ) : (
+        <Table
+          dataSource={payments}
+          columns={columns}
+          rowKey="id"
+          loading={loading}
+          pagination={{
+            ...pagination,
+            showSizeChanger: true,
+            showTotal: (total) => `Tổng ${total} giao dịch`,
+            onChange: (page) => setPagination((prev) => ({ ...prev, current: page })),
+          }}
+        />
+      )}
     </div>
   )
 }

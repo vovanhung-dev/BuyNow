@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Table, Button, Input, Space, Select, DatePicker, Tag, Typography, message } from 'antd'
-import { PlusOutlined, SearchOutlined, EyeOutlined } from '@ant-design/icons'
+import { Table, Button, Input, Space, Select, DatePicker, Tag, Typography, message, Card, Grid } from 'antd'
+import { PlusOutlined, SearchOutlined, EyeOutlined, ClockCircleOutlined, UserOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { ordersAPI } from '../../services/api'
 
 const { Title } = Typography
 const { RangePicker } = DatePicker
+const { useBreakpoint } = Grid
 
 const statusConfig = {
   PENDING: { color: 'orange', label: 'Mới tạo' },
@@ -17,6 +18,8 @@ const statusConfig = {
 
 const OrderList = () => {
   const navigate = useNavigate()
+  const screens = useBreakpoint()
+  const isMobile = !screens.md
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
@@ -54,6 +57,47 @@ const OrderList = () => {
   }
 
   const formatPrice = (val) => Number(val).toLocaleString('vi-VN') + ' đ'
+
+  // Mobile Order Card
+  const OrderCard = ({ order }) => (
+    <Card
+      size="small"
+      style={{ marginBottom: 12, cursor: 'pointer' }}
+      onClick={() => navigate(`/orders/${order.id}`)}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <div style={{ fontWeight: 600, color: '#134e52', fontSize: 15 }}>{order.code}</div>
+          <div style={{ fontSize: 13, color: '#5e6c7b', marginTop: 2 }}>{order.customerName}</div>
+        </div>
+        <Tag color={statusConfig[order.status]?.color}>
+          {statusConfig[order.status]?.label}
+        </Tag>
+      </div>
+      <div style={{ marginTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <div style={{ fontSize: 12, color: '#788492' }}>
+            <ClockCircleOutlined style={{ marginRight: 4 }} />
+            {dayjs(order.orderDate).format('DD/MM/YYYY')}
+          </div>
+          {order.user?.name && (
+            <div style={{ fontSize: 12, color: '#98a4b3', marginTop: 2 }}>
+              <UserOutlined style={{ marginRight: 4 }} />
+              {order.user.name}
+            </div>
+          )}
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontWeight: 600, color: '#2a9299', fontSize: 15 }}>{formatPrice(order.total)}</div>
+          {Number(order.debtAmount) > 0 && (
+            <div style={{ fontSize: 12, color: '#de350b', marginTop: 2 }}>
+              Nợ: {formatPrice(order.debtAmount)}
+            </div>
+          )}
+        </div>
+      </div>
+    </Card>
+  )
 
   const columns = [
     { title: 'Mã đơn', dataIndex: 'code', key: 'code', width: 140 },
@@ -114,54 +158,83 @@ const OrderList = () => {
   ]
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-        <Title level={4} style={{ margin: 0 }}>Đơn hàng</Title>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/orders/create')}>
+    <div className="animate-fade-in">
+      {/* Header */}
+      <div style={{
+        display: 'flex',
+        flexDirection: isMobile ? 'column' : 'row',
+        justifyContent: 'space-between',
+        gap: 12,
+        marginBottom: 16
+      }}>
+        <Title level={4} style={{ margin: 0, fontSize: isMobile ? 18 : 24 }}>Đơn hàng</Title>
+        <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/orders/create')} block={isMobile}>
           Tạo đơn hàng
         </Button>
       </div>
 
-      <Space style={{ marginBottom: 16 }} wrap>
-        <Input
-          placeholder="Tìm mã đơn, tên KH..."
-          prefix={<SearchOutlined />}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          style={{ width: 200 }}
-          allowClear
-        />
-        <Select
-          placeholder="Trạng thái"
-          value={status}
-          onChange={setStatus}
-          style={{ width: 150 }}
-          allowClear
-        >
-          <Select.Option value="PENDING">Mới tạo</Select.Option>
-          <Select.Option value="APPROVED">Đã duyệt</Select.Option>
-          <Select.Option value="COMPLETED">Hoàn thành</Select.Option>
-          <Select.Option value="CANCELLED">Đã hủy</Select.Option>
-        </Select>
-        <RangePicker
-          value={dateRange}
-          onChange={setDateRange}
-          format="DD/MM/YYYY"
-        />
-      </Space>
+      {/* Filters */}
+      <div style={{ marginBottom: 16 }}>
+        <Space style={{ width: '100%' }} direction={isMobile ? 'vertical' : 'horizontal'} wrap>
+          <Input
+            placeholder="Tìm mã đơn, tên KH..."
+            prefix={<SearchOutlined />}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{ width: isMobile ? '100%' : 200 }}
+            allowClear
+          />
+          <Select
+            placeholder="Trạng thái"
+            value={status}
+            onChange={setStatus}
+            style={{ width: isMobile ? '100%' : 150 }}
+            allowClear
+          >
+            <Select.Option value="PENDING">Mới tạo</Select.Option>
+            <Select.Option value="APPROVED">Đã duyệt</Select.Option>
+            <Select.Option value="COMPLETED">Hoàn thành</Select.Option>
+            <Select.Option value="CANCELLED">Đã hủy</Select.Option>
+          </Select>
+          <RangePicker
+            value={dateRange}
+            onChange={setDateRange}
+            format="DD/MM/YYYY"
+            style={{ width: isMobile ? '100%' : 'auto' }}
+          />
+        </Space>
+      </div>
 
-      <Table
-        dataSource={orders}
-        columns={columns}
-        rowKey="id"
-        loading={loading}
-        pagination={{
-          ...pagination,
-          showSizeChanger: true,
-          showTotal: (total) => `Tổng ${total} đơn hàng`,
-          onChange: (page) => setPagination((prev) => ({ ...prev, current: page })),
-        }}
-      />
+      {/* Content - Table or Cards */}
+      {isMobile ? (
+        <div>
+          {loading ? (
+            <Card loading={true} />
+          ) : (
+            <>
+              {orders.map((order) => (
+                <OrderCard key={order.id} order={order} />
+              ))}
+              <div style={{ textAlign: 'center', padding: '16px 0', color: '#888' }}>
+                Hiển thị {orders.length} / {pagination.total} đơn hàng
+              </div>
+            </>
+          )}
+        </div>
+      ) : (
+        <Table
+          dataSource={orders}
+          columns={columns}
+          rowKey="id"
+          loading={loading}
+          pagination={{
+            ...pagination,
+            showSizeChanger: true,
+            showTotal: (total) => `Tổng ${total} đơn hàng`,
+            onChange: (page) => setPagination((prev) => ({ ...prev, current: page })),
+          }}
+        />
+      )}
     </div>
   )
 }

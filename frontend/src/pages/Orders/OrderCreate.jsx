@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  Form, Select, DatePicker, InputNumber, Input, Button, Table, Card, Space, message, Divider, Row, Col, Tag
+  Form, Select, DatePicker, InputNumber, Input, Button, Table, Card, Space, message, Divider, Row, Col, Tag, Grid
 } from 'antd'
 import {
   PlusOutlined,
@@ -17,7 +17,11 @@ import {
 import dayjs from 'dayjs'
 import { customersAPI, productsAPI, ordersAPI } from '../../services/api'
 
+const { useBreakpoint } = Grid
+
 const OrderCreate = () => {
+  const screens = useBreakpoint()
+  const isMobile = !screens.md
   const navigate = useNavigate()
   const [form] = Form.useForm()
   const [customers, setCustomers] = useState([])
@@ -167,6 +171,46 @@ const OrderCreate = () => {
   const totals = calculateTotals()
   const formatPrice = (val) => Number(val).toLocaleString('vi-VN') + ' đ'
 
+  // Mobile Order Item Card
+  const OrderItemCard = ({ item, index }) => (
+    <div style={{
+      padding: '12px 0',
+      borderBottom: '1px solid #f0f0f0',
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 500, color: '#2d3640' }}>{item.name}</div>
+          <div style={{ fontSize: 12, color: '#788492', marginTop: 2 }}>
+            SKU: {item.sku} | {item.unit || '—'}
+          </div>
+        </div>
+        <Button
+          type="text"
+          size="small"
+          danger
+          icon={<DeleteOutlined />}
+          onClick={() => handleRemoveItem(index)}
+        />
+      </div>
+      <div style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 12, color: '#788492' }}>SL:</span>
+          <InputNumber
+            min={1}
+            value={item.quantity}
+            onChange={(v) => handleQuantityChange(index, v)}
+            size="small"
+            style={{ width: 60 }}
+          />
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: 12, color: '#788492' }}>{formatPrice(item.unitPrice)}</div>
+          <div style={{ fontWeight: 600, color: '#2a9299' }}>{formatPrice(item.total)}</div>
+        </div>
+      </div>
+    </div>
+  )
+
   const columns = [
     {
       title: 'STT',
@@ -277,27 +321,37 @@ const OrderCreate = () => {
   return (
     <div className="animate-fade-in order-form">
       {/* Page Header */}
-      <div className="page-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+      <div style={{
+        display: 'flex',
+        flexDirection: isMobile ? 'column' : 'row',
+        justifyContent: 'space-between',
+        alignItems: isMobile ? 'stretch' : 'center',
+        gap: 12,
+        marginBottom: 16
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Button
             icon={<ArrowLeftOutlined />}
             onClick={() => navigate('/orders')}
+            size={isMobile ? 'middle' : 'middle'}
           />
-          <h1 className="page-title" style={{ margin: 0 }}>Tạo đơn hàng mới</h1>
+          <h1 style={{ margin: 0, fontSize: isMobile ? 16 : 20, fontWeight: 600 }}>Tạo đơn hàng mới</h1>
         </div>
-        <Space>
-          <Button onClick={() => navigate('/orders')}>
-            Hủy bỏ
-          </Button>
-          <Button
-            type="primary"
-            icon={<SaveOutlined />}
-            onClick={handleSubmit}
-            loading={submitting}
-          >
-            Lưu đơn hàng
-          </Button>
-        </Space>
+        {!isMobile && (
+          <Space>
+            <Button onClick={() => navigate('/orders')}>
+              Hủy bỏ
+            </Button>
+            <Button
+              type="primary"
+              icon={<SaveOutlined />}
+              onClick={handleSubmit}
+              loading={submitting}
+            >
+              Lưu đơn hàng
+            </Button>
+          </Space>
+        )}
       </div>
 
       <Row gutter={24}>
@@ -311,7 +365,8 @@ const OrderCreate = () => {
                 <span>Thông tin khách hàng</span>
               </Space>
             }
-            style={{ marginBottom: 24 }}
+            style={{ marginBottom: isMobile ? 16 : 24 }}
+            size={isMobile ? 'small' : 'default'}
           >
             <Form form={form} layout="vertical">
               <Row gutter={16}>
@@ -421,10 +476,12 @@ const OrderCreate = () => {
                 <ShoppingCartOutlined style={{ color: '#2a9299' }} />
                 <span>Sản phẩm</span>
                 {orderItems.length > 0 && (
-                  <Tag color="processing">{orderItems.length} sản phẩm</Tag>
+                  <Tag color="processing">{orderItems.length}</Tag>
                 )}
               </Space>
             }
+            size={isMobile ? 'small' : 'default'}
+            style={{ marginBottom: isMobile ? 16 : 0 }}
           >
             <div style={{ marginBottom: 16 }}>
               <Select
@@ -452,14 +509,20 @@ const OrderCreate = () => {
             {orderItems.length === 0 ? (
               <div style={{
                 textAlign: 'center',
-                padding: '48px 0',
+                padding: isMobile ? '32px 0' : '48px 0',
                 color: '#98a4b3',
               }}>
-                <ShoppingCartOutlined style={{ fontSize: 48, marginBottom: 16 }} />
-                <p style={{ margin: 0 }}>Chưa có sản phẩm nào</p>
-                <p style={{ margin: '4px 0 0', fontSize: 13 }}>
+                <ShoppingCartOutlined style={{ fontSize: isMobile ? 36 : 48, marginBottom: 12 }} />
+                <p style={{ margin: 0, fontSize: isMobile ? 14 : 16 }}>Chưa có sản phẩm nào</p>
+                <p style={{ margin: '4px 0 0', fontSize: 12 }}>
                   Tìm kiếm và thêm sản phẩm vào đơn hàng
                 </p>
+              </div>
+            ) : isMobile ? (
+              <div>
+                {orderItems.map((item, index) => (
+                  <OrderItemCard key={item.productId} item={item} index={index} />
+                ))}
               </div>
             ) : (
               <Table
@@ -482,7 +545,8 @@ const OrderCreate = () => {
                 <span>Tổng cộng</span>
               </Space>
             }
-            style={{ position: 'sticky', top: 88 }}
+            style={{ position: isMobile ? 'relative' : 'sticky', top: isMobile ? 0 : 88 }}
+            size={isMobile ? 'small' : 'default'}
           >
             <Form form={form} layout="vertical">
               <div className="total-section">
@@ -582,6 +646,36 @@ const OrderCreate = () => {
           </Card>
         </Col>
       </Row>
+
+      {/* Mobile Fixed Footer */}
+      {isMobile && (
+        <div style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          padding: '12px 16px',
+          background: '#fff',
+          boxShadow: '0 -2px 8px rgba(0,0,0,0.1)',
+          zIndex: 100,
+          display: 'flex',
+          gap: 12,
+        }}>
+          <Button onClick={() => navigate('/orders')} style={{ flex: 1 }}>
+            Hủy
+          </Button>
+          <Button
+            type="primary"
+            icon={<SaveOutlined />}
+            onClick={handleSubmit}
+            loading={submitting}
+            disabled={orderItems.length === 0 || !selectedCustomer}
+            style={{ flex: 2 }}
+          >
+            Lưu đơn hàng
+          </Button>
+        </div>
+      )}
     </div>
   )
 }

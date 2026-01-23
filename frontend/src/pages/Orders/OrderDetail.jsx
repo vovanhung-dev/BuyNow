@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
-  Card, Descriptions, Table, Tag, Button, Space, Typography, message, Popconfirm, Modal, InputNumber, Select
+  Card, Descriptions, Table, Tag, Button, Space, Typography, message, Popconfirm, Modal, InputNumber, Select, Grid
 } from 'antd'
-import { PrinterOutlined, CheckOutlined, CloseOutlined, DollarOutlined } from '@ant-design/icons'
+import { PrinterOutlined, CheckOutlined, CloseOutlined, DollarOutlined, ArrowLeftOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { ordersAPI, paymentsAPI } from '../../services/api'
 import { useAuthStore } from '../../store'
 
 const { Title, Text } = Typography
+const { useBreakpoint } = Grid
 
 const statusConfig = {
   PENDING: { color: 'orange', label: 'Mới tạo' },
@@ -20,6 +21,8 @@ const statusConfig = {
 const OrderDetail = () => {
   const { id } = useParams()
   const navigate = useNavigate()
+  const screens = useBreakpoint()
+  const isMobile = !screens.md
   const [order, setOrder] = useState(null)
   const [loading, setLoading] = useState(true)
   const [paymentModalOpen, setPaymentModalOpen] = useState(false)
@@ -101,6 +104,27 @@ const OrderDetail = () => {
   const canEdit = ['ADMIN', 'MANAGER'].includes(user?.role)
   const debtAmount = Number(order.debtAmount)
 
+  // Mobile Item Card
+  const ItemCard = ({ item }) => (
+    <div style={{
+      padding: '12px 0',
+      borderBottom: '1px solid #f0f0f0',
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 500 }}>{item.stt}. {item.productName}</div>
+          <div style={{ fontSize: 12, color: '#788492', marginTop: 2 }}>
+            {item.unit || '—'} × {item.quantity}
+          </div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: 12, color: '#788492' }}>{formatPrice(item.unitPrice)}</div>
+          <div style={{ fontWeight: 600, color: '#2a9299' }}>{formatPrice(item.total)}</div>
+        </div>
+      </div>
+    </div>
+  )
+
   const itemColumns = [
     { title: 'STT', dataIndex: 'stt', key: 'stt', width: 50 },
     { title: 'Tên sản phẩm', dataIndex: 'productName', key: 'productName' },
@@ -128,18 +152,35 @@ const OrderDetail = () => {
   ]
 
   return (
-    <div>
-      <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-        <Title level={4} style={{ margin: 0 }}>Chi tiết đơn hàng: {order.code}</Title>
-        <Space>
+    <div className="animate-fade-in">
+      {/* Header */}
+      <div className="no-print" style={{
+        display: 'flex',
+        flexDirection: isMobile ? 'column' : 'row',
+        justifyContent: 'space-between',
+        gap: 12,
+        marginBottom: 16
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/orders')} />
+          <Title level={4} style={{ margin: 0, fontSize: isMobile ? 16 : 20 }}>
+            {order.code}
+          </Title>
+          <Tag color={statusConfig[order.status]?.color}>
+            {statusConfig[order.status]?.label}
+          </Tag>
+        </div>
+        <Space wrap size={8}>
           {order.status === 'PENDING' && canEdit && (
             <Popconfirm title="Xác nhận duyệt đơn hàng?" onConfirm={handleApprove}>
-              <Button type="primary" icon={<CheckOutlined />}>Duyệt</Button>
+              <Button type="primary" icon={<CheckOutlined />} size={isMobile ? 'small' : 'middle'}>
+                Duyệt
+              </Button>
             </Popconfirm>
           )}
           {order.status === 'APPROVED' && canEdit && (
             <Popconfirm title="Xác nhận hoàn thành đơn hàng?" onConfirm={handleComplete}>
-              <Button type="primary" icon={<CheckOutlined />} style={{ background: '#52c41a' }}>
+              <Button type="primary" icon={<CheckOutlined />} style={{ background: '#52c41a' }} size={isMobile ? 'small' : 'middle'}>
                 Hoàn thành
               </Button>
             </Popconfirm>
@@ -151,17 +192,21 @@ const OrderDetail = () => {
                 setPaymentAmount(debtAmount)
                 setPaymentModalOpen(true)
               }}
+              size={isMobile ? 'small' : 'middle'}
             >
               Thanh toán
             </Button>
           )}
           {order.status === 'PENDING' && (
             <Popconfirm title="Xác nhận hủy đơn hàng?" onConfirm={handleCancel}>
-              <Button danger icon={<CloseOutlined />}>Hủy đơn</Button>
+              <Button danger icon={<CloseOutlined />} size={isMobile ? 'small' : 'middle'}>
+                Hủy đơn
+              </Button>
             </Popconfirm>
           )}
-          <Button icon={<PrinterOutlined />} onClick={handlePrint}>In</Button>
-          <Button onClick={() => navigate('/orders')}>Quay lại</Button>
+          <Button icon={<PrinterOutlined />} onClick={handlePrint} size={isMobile ? 'small' : 'middle'}>
+            In
+          </Button>
         </Space>
       </div>
 
@@ -173,58 +218,95 @@ const OrderDetail = () => {
           <Title level={4} style={{ marginTop: 16 }}>HÓA ĐƠN BÁN HÀNG</Title>
         </div>
 
-        <Card style={{ marginBottom: 16 }}>
-          <Descriptions column={2} size="small">
+        <Card style={{ marginBottom: 16 }} size={isMobile ? 'small' : 'default'}>
+          <Descriptions column={isMobile ? 1 : 2} size="small">
             <Descriptions.Item label="Mã đơn">{order.code}</Descriptions.Item>
             <Descriptions.Item label="Ngày">
               {dayjs(order.orderDate).format('DD/MM/YYYY')}
             </Descriptions.Item>
             <Descriptions.Item label="Khách hàng">{order.customerName}</Descriptions.Item>
             <Descriptions.Item label="Điện thoại">{order.customerPhone || '-'}</Descriptions.Item>
-            <Descriptions.Item label="Địa chỉ" span={2}>{order.customerAddress || '-'}</Descriptions.Item>
-            <Descriptions.Item label="Trạng thái">
-              <Tag color={statusConfig[order.status]?.color}>
-                {statusConfig[order.status]?.label}
-              </Tag>
-            </Descriptions.Item>
+            <Descriptions.Item label="Địa chỉ" span={isMobile ? 1 : 2}>{order.customerAddress || '-'}</Descriptions.Item>
             <Descriptions.Item label="Nhân viên">{order.user?.name}</Descriptions.Item>
           </Descriptions>
         </Card>
 
-        <Card title="Chi tiết sản phẩm" style={{ marginBottom: 16 }}>
-          <Table
-            dataSource={order.items}
-            columns={itemColumns}
-            rowKey="id"
-            pagination={false}
-            size="small"
-            summary={() => (
-              <Table.Summary>
-                <Table.Summary.Row>
-                  <Table.Summary.Cell colSpan={5} align="right"><strong>Tổng tiền hàng:</strong></Table.Summary.Cell>
-                  <Table.Summary.Cell>{formatPrice(order.subtotal)}</Table.Summary.Cell>
-                </Table.Summary.Row>
+        <Card title="Chi tiết sản phẩm" style={{ marginBottom: 16 }} size={isMobile ? 'small' : 'default'}>
+          {isMobile ? (
+            <>
+              {order.items.map((item) => (
+                <ItemCard key={item.id} item={item} />
+              ))}
+              {/* Summary for Mobile */}
+              <div style={{ marginTop: 16, paddingTop: 16, borderTop: '2px solid #f0f0f0' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <span>Tổng tiền hàng:</span>
+                  <span>{formatPrice(order.subtotal)}</span>
+                </div>
                 {Number(order.discount) > 0 && (
-                  <Table.Summary.Row>
-                    <Table.Summary.Cell colSpan={5} align="right">Chiết khấu:</Table.Summary.Cell>
-                    <Table.Summary.Cell>-{formatPrice(order.discount)}</Table.Summary.Cell>
-                  </Table.Summary.Row>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <span>Chiết khấu:</span>
+                    <span>-{formatPrice(order.discount)}</span>
+                  </div>
                 )}
-                <Table.Summary.Row>
-                  <Table.Summary.Cell colSpan={5} align="right"><strong>Tổng thanh toán:</strong></Table.Summary.Cell>
-                  <Table.Summary.Cell><strong style={{ color: '#1890ff' }}>{formatPrice(order.total)}</strong></Table.Summary.Cell>
-                </Table.Summary.Row>
-                <Table.Summary.Row>
-                  <Table.Summary.Cell colSpan={5} align="right">Đã thanh toán:</Table.Summary.Cell>
-                  <Table.Summary.Cell style={{ color: 'green' }}>{formatPrice(order.paidAmount)}</Table.Summary.Cell>
-                </Table.Summary.Row>
-                <Table.Summary.Row>
-                  <Table.Summary.Cell colSpan={5} align="right"><strong>Còn nợ:</strong></Table.Summary.Cell>
-                  <Table.Summary.Cell><strong style={{ color: debtAmount > 0 ? 'red' : 'green' }}>{formatPrice(order.debtAmount)}</strong></Table.Summary.Cell>
-                </Table.Summary.Row>
-              </Table.Summary>
-            )}
-          />
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontWeight: 600 }}>
+                  <span>Tổng thanh toán:</span>
+                  <span style={{ color: '#2a9299' }}>{formatPrice(order.total)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <span>Đã thanh toán:</span>
+                  <span style={{ color: '#22a06b' }}>{formatPrice(order.paidAmount)}</span>
+                </div>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  padding: '12px',
+                  background: debtAmount > 0 ? '#ffedeb' : '#dcf7e9',
+                  borderRadius: 8,
+                  fontWeight: 600,
+                }}>
+                  <span>Còn nợ:</span>
+                  <span style={{ color: debtAmount > 0 ? '#de350b' : '#22a06b' }}>
+                    {formatPrice(order.debtAmount)}
+                  </span>
+                </div>
+              </div>
+            </>
+          ) : (
+            <Table
+              dataSource={order.items}
+              columns={itemColumns}
+              rowKey="id"
+              pagination={false}
+              size="small"
+              summary={() => (
+                <Table.Summary>
+                  <Table.Summary.Row>
+                    <Table.Summary.Cell colSpan={5} align="right"><strong>Tổng tiền hàng:</strong></Table.Summary.Cell>
+                    <Table.Summary.Cell>{formatPrice(order.subtotal)}</Table.Summary.Cell>
+                  </Table.Summary.Row>
+                  {Number(order.discount) > 0 && (
+                    <Table.Summary.Row>
+                      <Table.Summary.Cell colSpan={5} align="right">Chiết khấu:</Table.Summary.Cell>
+                      <Table.Summary.Cell>-{formatPrice(order.discount)}</Table.Summary.Cell>
+                    </Table.Summary.Row>
+                  )}
+                  <Table.Summary.Row>
+                    <Table.Summary.Cell colSpan={5} align="right"><strong>Tổng thanh toán:</strong></Table.Summary.Cell>
+                    <Table.Summary.Cell><strong style={{ color: '#1890ff' }}>{formatPrice(order.total)}</strong></Table.Summary.Cell>
+                  </Table.Summary.Row>
+                  <Table.Summary.Row>
+                    <Table.Summary.Cell colSpan={5} align="right">Đã thanh toán:</Table.Summary.Cell>
+                    <Table.Summary.Cell style={{ color: 'green' }}>{formatPrice(order.paidAmount)}</Table.Summary.Cell>
+                  </Table.Summary.Row>
+                  <Table.Summary.Row>
+                    <Table.Summary.Cell colSpan={5} align="right"><strong>Còn nợ:</strong></Table.Summary.Cell>
+                    <Table.Summary.Cell><strong style={{ color: debtAmount > 0 ? 'red' : 'green' }}>{formatPrice(order.debtAmount)}</strong></Table.Summary.Cell>
+                  </Table.Summary.Row>
+                </Table.Summary>
+              )}
+            />
+          )}
         </Card>
 
         {order.payments?.length > 0 && (
