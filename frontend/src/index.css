@@ -1449,3 +1449,53 @@ body {
     width: 60%;
   }
 }
+
+/* ================================================
+   MOBILE DRAWER
+   ================================================ */
+
+.mobile-drawer .ant-drawer-body {
+  padding: 0 !important;
+}
+
+.mobile-drawer .ant-menu-item {
+  margin: 4px 12px !important;
+  padding-left: 16px !important;
+  border-radius: 8px !important;
+}
+
+.mobile-drawer .ant-menu-item-selected {
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* ================================================
+   ORDER CREATE - Mobile Fixed Footer
+   ================================================ */
+
+@media (max-width: 767px) {
+  .order-form {
+    padding-bottom: 80px; /* Space for fixed footer */
+  }
+
+  .order-form .total-section {
+    padding: 16px;
+  }
+
+  .order-form .total-row.grand-total .value {
+    font-size: 22px;
+  }
+
+  /* DatePicker Range - stack on mobile */
+  .ant-picker-range {
+    width: 100% !important;
+  }
+
+  /* Space component - full width on mobile */
+  .ant-space-vertical {
+    width: 100% !important;
+  }
+
+  .ant-space-vertical .ant-space-item {
+    width: 100% !important;
+  }
+}

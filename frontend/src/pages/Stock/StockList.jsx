@@ -295,10 +295,12 @@ const StockList = () => {
 
       {/* Adjust Modal */}
       <Modal
-        title={`Điều chỉnh tồn kho: ${selectedProduct?.name}`}
+        title={`Điều chỉnh: ${selectedProduct?.name}`}
         open={adjustModalOpen}
         onCancel={() => { setAdjustModalOpen(false); form.resetFields() }}
         onOk={() => form.submit()}
+        width={isMobile ? '100%' : 520}
+        style={isMobile ? { top: 20 } : undefined}
       >
         <Form form={form} layout="vertical" onFinish={handleAdjust}>
           <div style={{ marginBottom: 16 }}>
