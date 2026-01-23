@@ -129,7 +129,7 @@ const MainLayout = () => {
         trigger={null}
         collapsible
         collapsed={collapsed}
-        width={240}
+        width={260}
         collapsedWidth={72}
       >
         {/* Logo */}

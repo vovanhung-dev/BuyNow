@@ -100,7 +100,7 @@ const theme = {
     Menu: {
       darkItemBg: 'transparent',
       darkSubMenuItemBg: 'transparent',
-      darkItemSelectedBg: 'linear-gradient(90deg, #21777e, #2a9299)',
+      darkItemSelectedBg: '#21777e',
     },
     Modal: {
       headerBg: 'linear-gradient(135deg, #1a6268, #21777e)',
