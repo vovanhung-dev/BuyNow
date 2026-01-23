@@ -10,6 +10,7 @@ import OrderCreate from './pages/Orders/OrderCreate'
 import OrderDetail from './pages/Orders/OrderDetail'
 import StockList from './pages/Stock/StockList'
 import PaymentList from './pages/Payments/PaymentList'
+import UserList from './pages/Users/UserList'
 
 // Protected Route component
 const ProtectedRoute = ({ children }) => {
@@ -17,6 +18,17 @@ const ProtectedRoute = ({ children }) => {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />
+  }
+
+  return children
+}
+
+// Admin Only Route component
+const AdminRoute = ({ children }) => {
+  const user = useAuthStore((state) => state.user)
+
+  if (user?.role !== 'ADMIN') {
+    return <Navigate to="/" replace />
   }
 
   return children
@@ -44,6 +56,7 @@ function App() {
           <Route path="orders/:id" element={<OrderDetail />} />
           <Route path="stock" element={<StockList />} />
           <Route path="payments" element={<PaymentList />} />
+          <Route path="users" element={<AdminRoute><UserList /></AdminRoute>} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

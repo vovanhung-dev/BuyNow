@@ -14,20 +14,30 @@ import {
   BellOutlined,
   SettingOutlined,
   CloseOutlined,
+  TeamOutlined,
 } from '@ant-design/icons'
 import { useAuthStore } from '../../store'
 
 const { Header, Sider, Content } = Layout
 const { useBreakpoint } = Grid
 
-const menuItems = [
-  { key: '/', icon: <DashboardOutlined />, label: 'Tổng quan' },
-  { key: '/customers', icon: <UserOutlined />, label: 'Khách hàng' },
-  { key: '/products', icon: <ShoppingOutlined />, label: 'Sản phẩm' },
-  { key: '/orders', icon: <ShoppingCartOutlined />, label: 'Đơn hàng' },
-  { key: '/stock', icon: <DatabaseOutlined />, label: 'Tồn kho' },
-  { key: '/payments', icon: <DollarOutlined />, label: 'Thanh toán' },
-]
+const getMenuItems = (userRole) => {
+  const baseItems = [
+    { key: '/', icon: <DashboardOutlined />, label: 'Tổng quan' },
+    { key: '/customers', icon: <UserOutlined />, label: 'Khách hàng' },
+    { key: '/products', icon: <ShoppingOutlined />, label: 'Sản phẩm' },
+    { key: '/orders', icon: <ShoppingCartOutlined />, label: 'Đơn hàng' },
+    { key: '/stock', icon: <DatabaseOutlined />, label: 'Tồn kho' },
+    { key: '/payments', icon: <DollarOutlined />, label: 'Thanh toán' },
+  ]
+
+  // Only show user management for ADMIN
+  if (userRole === 'ADMIN') {
+    baseItems.push({ key: '/users', icon: <TeamOutlined />, label: 'Tài khoản' })
+  }
+
+  return baseItems
+}
 
 const MainLayout = () => {
   const [collapsed, setCollapsed] = useState(false)
@@ -38,6 +48,7 @@ const MainLayout = () => {
   const screens = useBreakpoint()
 
   const isMobile = !screens.md
+  const menuItems = getMenuItems(user?.role)
 
   // Close mobile menu when route changes
   useEffect(() => {
