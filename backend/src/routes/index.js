@@ -12,6 +12,7 @@ const productController = require('../controllers/product.controller');
 const orderController = require('../controllers/order.controller');
 const paymentController = require('../controllers/payment.controller');
 const stockController = require('../controllers/stock.controller');
+const reportController = require('../controllers/report.controller');
 
 // ==================== AUTH ROUTES ====================
 router.post('/auth/login', authController.login);
@@ -69,5 +70,9 @@ router.get('/stock/alerts', authMiddleware, stockController.getAlerts);
 router.post('/stock/import', authMiddleware, requireRole('ADMIN', 'MANAGER'), stockController.importStock);
 router.post('/stock/bulk-import', authMiddleware, requireRole('ADMIN', 'MANAGER'), stockController.bulkImport);
 router.post('/stock/adjust', authMiddleware, requireRole('ADMIN', 'MANAGER'), stockController.adjustStock);
+
+// ==================== REPORT ROUTES ====================
+router.get('/reports/by-employee', authMiddleware, reportController.getRevenueByEmployee);
+router.get('/reports/by-employee/:id', authMiddleware, reportController.getEmployeeOrders);
 
 module.exports = router;

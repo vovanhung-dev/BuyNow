@@ -18,6 +18,8 @@ import StockAdjust from './pages/Stock/StockAdjust'
 import PaymentList from './pages/Payments/PaymentList'
 import UserList from './pages/Users/UserList'
 import UserForm from './pages/Users/UserForm'
+import RevenueByEmployee from './pages/Reports/RevenueByEmployee'
+import EmployeeOrdersDetail from './pages/Reports/EmployeeOrdersDetail'
 
 // Protected Route component
 const ProtectedRoute = ({ children }) => {
@@ -71,6 +73,8 @@ function App() {
           <Route path="stock/import" element={<StockImport />} />
           <Route path="stock/:id/adjust" element={<StockAdjust />} />
           <Route path="payments" element={<PaymentList />} />
+          <Route path="reports/employee" element={<RevenueByEmployee />} />
+          <Route path="reports/employee/:id" element={<EmployeeOrdersDetail />} />
           <Route path="users" element={<AdminRoute><UserList /></AdminRoute>} />
           <Route path="users/create" element={<AdminRoute><UserForm /></AdminRoute>} />
           <Route path="users/:id/edit" element={<AdminRoute><UserForm /></AdminRoute>} />

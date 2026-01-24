@@ -14,6 +14,7 @@ import {
   BellOutlined,
   CloseOutlined,
   TeamOutlined,
+  BarChartOutlined,
 } from '@ant-design/icons'
 import { useAuthStore } from '../../store'
 
@@ -28,6 +29,7 @@ const getMenuItems = (userRole) => {
     { key: '/orders', icon: <ShoppingCartOutlined />, label: 'Đơn hàng' },
     { key: '/stock', icon: <DatabaseOutlined />, label: 'Tồn kho' },
     { key: '/payments', icon: <DollarOutlined />, label: 'Thanh toán' },
+    { key: '/reports/employee', icon: <BarChartOutlined />, label: 'Doanh thu NV' },
   ]
 
   // Only show user management for ADMIN
@@ -36,6 +38,23 @@ const getMenuItems = (userRole) => {
   }
 
   return baseItems
+}
+
+// Get active menu key based on current path
+const getActiveMenuKey = (pathname, menuItems) => {
+  // Exact match first
+  const exactMatch = menuItems.find(item => item.key === pathname)
+  if (exactMatch) return pathname
+
+  // Find parent path (e.g., /reports/employee/123 -> /reports/employee)
+  for (const item of menuItems) {
+    if (pathname.startsWith(item.key + '/') || pathname.startsWith(item.key.replace(/\/$/, '') + '/')) {
+      return item.key
+    }
+  }
+
+  // Default fallback
+  return pathname
 }
 
 const MainLayout = () => {
@@ -48,6 +67,7 @@ const MainLayout = () => {
 
   const isMobile = !screens.md
   const menuItems = getMenuItems(user?.role)
+  const activeMenuKey = getActiveMenuKey(location.pathname, menuItems)
 
   // Close mobile menu when route changes
   useEffect(() => {
@@ -132,7 +152,7 @@ const MainLayout = () => {
       <Menu
         theme="dark"
         mode="inline"
-        selectedKeys={[location.pathname]}
+        selectedKeys={[activeMenuKey]}
         items={menuItems}
         onClick={handleMenuClick}
       />
@@ -200,7 +220,7 @@ const MainLayout = () => {
         <Menu
           theme="dark"
           mode="inline"
-          selectedKeys={[location.pathname]}
+          selectedKeys={[activeMenuKey]}
           items={menuItems}
           onClick={handleMenuClick}
           style={{ background: 'transparent', borderRight: 0 }}
@@ -259,7 +279,7 @@ const MainLayout = () => {
             {/* Page title on mobile */}
             {isMobile && (
               <span style={{ fontWeight: 600, color: '#134e52', fontSize: 16 }}>
-                {menuItems.find(item => item.key === location.pathname)?.label || 'BuyNow'}
+                {menuItems.find(item => item.key === activeMenuKey)?.label || 'BuyNow'}
               </span>
             )}
           </div>

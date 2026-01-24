@@ -106,4 +106,10 @@ export const stockAPI = {
   adjust: (data) => api.post('/stock/adjust', data),
 }
 
+// Reports API
+export const reportsAPI = {
+  getByEmployee: (params) => api.get('/reports/by-employee', { params }),
+  getEmployeeOrders: (id, params) => api.get(`/reports/by-employee/${id}`, { params }),
+}
+
 export default api
