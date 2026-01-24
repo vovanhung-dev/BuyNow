@@ -1,27 +1,23 @@
 import { useEffect, useState } from 'react'
-import { Table, Button, Input, Space, Modal, Form, InputNumber, Select, message, Typography, Tag, Card, Grid } from 'antd'
+import { useNavigate } from 'react-router-dom'
+import { Table, Button, Input, Space, message, Typography, Tag, Card, Grid } from 'antd'
 import { SearchOutlined, PlusOutlined, WarningOutlined, EditOutlined } from '@ant-design/icons'
-import { stockAPI, productsAPI } from '../../services/api'
+import { stockAPI } from '../../services/api'
 
 const { Title } = Typography
 const { useBreakpoint } = Grid
 
 const StockList = () => {
+  const navigate = useNavigate()
   const screens = useBreakpoint()
   const isMobile = !screens.md
   const [stock, setStock] = useState([])
-  const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
   const [showLowStock, setShowLowStock] = useState(false)
-  const [importModalOpen, setImportModalOpen] = useState(false)
-  const [adjustModalOpen, setAdjustModalOpen] = useState(false)
-  const [selectedProduct, setSelectedProduct] = useState(null)
-  const [form] = Form.useForm()
 
   useEffect(() => {
     loadStock()
-    loadProducts()
   }, [search, showLowStock])
 
   const loadStock = async () => {
@@ -36,47 +32,12 @@ const StockList = () => {
     }
   }
 
-  const loadProducts = async () => {
-    try {
-      const res = await productsAPI.getAll({ limit: 1000, active: 'true' })
-      setProducts(res.data || [])
-    } catch (error) {
-      console.error(error)
-    }
+  const handleImport = () => {
+    navigate('/stock/import')
   }
 
-  const handleImport = async (values) => {
-    try {
-      await stockAPI.import(values)
-      message.success('Nhập kho thành công')
-      setImportModalOpen(false)
-      form.resetFields()
-      loadStock()
-    } catch (error) {
-      message.error(error.message || 'Lỗi nhập kho')
-    }
-  }
-
-  const handleAdjust = async (values) => {
-    try {
-      await stockAPI.adjust({
-        productId: selectedProduct.id,
-        newQuantity: values.newQuantity,
-        note: values.note,
-      })
-      message.success('Điều chỉnh tồn kho thành công')
-      setAdjustModalOpen(false)
-      form.resetFields()
-      loadStock()
-    } catch (error) {
-      message.error(error.message || 'Lỗi điều chỉnh')
-    }
-  }
-
-  const openAdjustModal = (record) => {
-    setSelectedProduct(record)
-    form.setFieldsValue({ newQuantity: record.stock })
-    setAdjustModalOpen(true)
+  const handleAdjust = (record) => {
+    navigate(`/stock/${record.id}/adjust`)
   }
 
   // Mobile Stock Card
@@ -91,7 +52,7 @@ const StockList = () => {
             key="adjust"
             type="link"
             icon={<EditOutlined />}
-            onClick={() => openAdjustModal(item)}
+            onClick={() => handleAdjust(item)}
           >
             Điều chỉnh
           </Button>
@@ -176,7 +137,7 @@ const StockList = () => {
       key: 'actions',
       width: 100,
       render: (_, record) => (
-        <Button size="small" onClick={() => openAdjustModal(record)}>
+        <Button size="small" onClick={() => handleAdjust(record)}>
           Điều chỉnh
         </Button>
       ),
@@ -215,7 +176,7 @@ const StockList = () => {
             <Button
               type="primary"
               icon={<PlusOutlined />}
-              onClick={() => setImportModalOpen(true)}
+              onClick={handleImport}
               style={{ flex: isMobile ? 1 : 'unset' }}
             >
               Nhập kho
@@ -250,73 +211,7 @@ const StockList = () => {
         />
       )}
 
-      {/* Import Modal */}
-      <Modal
-        title="Nhập kho"
-        open={importModalOpen}
-        onCancel={() => { setImportModalOpen(false); form.resetFields() }}
-        onOk={() => form.submit()}
-        width={isMobile ? '100%' : 520}
-        style={isMobile ? { top: 20 } : undefined}
-      >
-        <Form form={form} layout="vertical" onFinish={handleImport}>
-          <Form.Item
-            name="productId"
-            label="Sản phẩm"
-            rules={[{ required: true, message: 'Vui lòng chọn sản phẩm' }]}
-          >
-            <Select
-              showSearch
-              placeholder="Chọn sản phẩm"
-              optionFilterProp="label"
-              filterOption={(input, option) =>
-                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-              }
-              options={products.map((p) => ({
-                value: p.id,
-                label: `${p.sku} - ${p.name}`,
-              }))}
-            />
-          </Form.Item>
-          <Form.Item
-            name="quantity"
-            label="Số lượng nhập"
-            rules={[{ required: true, message: 'Vui lòng nhập số lượng' }]}
-          >
-            <InputNumber min={1} style={{ width: '100%' }} />
-          </Form.Item>
-          <Form.Item name="note" label="Ghi chú">
-            <Input.TextArea rows={2} />
-          </Form.Item>
-        </Form>
-      </Modal>
-
-      {/* Adjust Modal */}
-      <Modal
-        title={`Điều chỉnh: ${selectedProduct?.name}`}
-        open={adjustModalOpen}
-        onCancel={() => { setAdjustModalOpen(false); form.resetFields() }}
-        onOk={() => form.submit()}
-        width={isMobile ? '100%' : 520}
-        style={isMobile ? { top: 20 } : undefined}
-      >
-        <Form form={form} layout="vertical" onFinish={handleAdjust}>
-          <div style={{ marginBottom: 16 }}>
-            <p>Tồn kho hiện tại: <strong>{selectedProduct?.stock}</strong></p>
-          </div>
-          <Form.Item
-            name="newQuantity"
-            label="Tồn kho mới"
-            rules={[{ required: true, message: 'Vui lòng nhập số lượng' }]}
-          >
-            <InputNumber min={0} style={{ width: '100%' }} />
-          </Form.Item>
-          <Form.Item name="note" label="Lý do điều chỉnh">
-            <Input.TextArea rows={2} />
-          </Form.Item>
-        </Form>
-      </Modal>
-    </div>
+      </div>
   )
 }
 

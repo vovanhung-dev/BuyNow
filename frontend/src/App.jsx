@@ -4,13 +4,18 @@ import MainLayout from './components/layout/MainLayout'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import CustomerList from './pages/Customers/CustomerList'
+import CustomerForm from './pages/Customers/CustomerForm'
 import ProductList from './pages/Products/ProductList'
+import ProductForm from './pages/Products/ProductForm'
 import OrderList from './pages/Orders/OrderList'
 import OrderCreate from './pages/Orders/OrderCreate'
 import OrderDetail from './pages/Orders/OrderDetail'
 import StockList from './pages/Stock/StockList'
+import StockImport from './pages/Stock/StockImport'
+import StockAdjust from './pages/Stock/StockAdjust'
 import PaymentList from './pages/Payments/PaymentList'
 import UserList from './pages/Users/UserList'
+import UserForm from './pages/Users/UserForm'
 
 // Protected Route component
 const ProtectedRoute = ({ children }) => {
@@ -50,13 +55,21 @@ function App() {
         >
           <Route index element={<Dashboard />} />
           <Route path="customers" element={<CustomerList />} />
+          <Route path="customers/create" element={<CustomerForm />} />
+          <Route path="customers/:id/edit" element={<CustomerForm />} />
           <Route path="products" element={<ProductList />} />
+          <Route path="products/create" element={<ProductForm />} />
+          <Route path="products/:id/edit" element={<ProductForm />} />
           <Route path="orders" element={<OrderList />} />
           <Route path="orders/create" element={<OrderCreate />} />
           <Route path="orders/:id" element={<OrderDetail />} />
           <Route path="stock" element={<StockList />} />
+          <Route path="stock/import" element={<StockImport />} />
+          <Route path="stock/:id/adjust" element={<StockAdjust />} />
           <Route path="payments" element={<PaymentList />} />
           <Route path="users" element={<AdminRoute><UserList /></AdminRoute>} />
+          <Route path="users/create" element={<AdminRoute><UserForm /></AdminRoute>} />
+          <Route path="users/:id/edit" element={<AdminRoute><UserForm /></AdminRoute>} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

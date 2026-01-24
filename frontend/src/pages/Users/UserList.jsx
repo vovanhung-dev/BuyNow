@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Table, Button, Input, Space, Modal, Form, Select, message, Typography, Tag, Card, Grid, Popconfirm, Switch } from 'antd'
-import { SearchOutlined, PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined, LockOutlined, MailOutlined, PhoneOutlined } from '@ant-design/icons'
+import { useNavigate } from 'react-router-dom'
+import { Table, Button, Input, Space, message, Typography, Tag, Card, Grid, Popconfirm } from 'antd'
+import { SearchOutlined, PlusOutlined, EditOutlined, DeleteOutlined, PhoneOutlined } from '@ant-design/icons'
 import { usersAPI } from '../../services/api'
 import { useAuthStore } from '../../store'
 
@@ -14,14 +15,12 @@ const roleConfig = {
 }
 
 const UserList = () => {
+  const navigate = useNavigate()
   const screens = useBreakpoint()
   const isMobile = !screens.md
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
-  const [modalOpen, setModalOpen] = useState(false)
-  const [editingUser, setEditingUser] = useState(null)
-  const [form] = Form.useForm()
   const currentUser = useAuthStore((state) => state.user)
 
   useEffect(() => {
@@ -40,40 +39,8 @@ const UserList = () => {
     }
   }
 
-  const handleSubmit = async (values) => {
-    try {
-      if (editingUser) {
-        // Update - don't send password if empty
-        const updateData = { ...values }
-        if (!updateData.password) {
-          delete updateData.password
-        }
-        await usersAPI.update(editingUser.id, updateData)
-        message.success('Cập nhật tài khoản thành công')
-      } else {
-        // Create
-        await usersAPI.create(values)
-        message.success('Tạo tài khoản thành công')
-      }
-      setModalOpen(false)
-      form.resetFields()
-      setEditingUser(null)
-      loadUsers()
-    } catch (error) {
-      message.error(error.message || 'Lỗi xử lý')
-    }
-  }
-
   const handleEdit = (record) => {
-    setEditingUser(record)
-    form.setFieldsValue({
-      name: record.name,
-      email: record.email,
-      phone: record.phone,
-      role: record.role,
-      active: record.active,
-    })
-    setModalOpen(true)
+    navigate(`/users/${record.id}/edit`)
   }
 
   const handleDelete = async (id) => {
@@ -86,11 +53,8 @@ const UserList = () => {
     }
   }
 
-  const openCreateModal = () => {
-    setEditingUser(null)
-    form.resetFields()
-    form.setFieldsValue({ role: 'SALES', active: true })
-    setModalOpen(true)
+  const handleCreate = () => {
+    navigate('/users/create')
   }
 
   // Mobile User Card
@@ -266,7 +230,7 @@ const UserList = () => {
           <Button
             type="primary"
             icon={<PlusOutlined />}
-            onClick={openCreateModal}
+            onClick={handleCreate}
             style={{ width: isMobile ? '100%' : 'auto' }}
           >
             Thêm tài khoản
@@ -324,82 +288,7 @@ const UserList = () => {
         />
       )}
 
-      {/* Create/Edit Modal */}
-      <Modal
-        title={editingUser ? 'Cập nhật tài khoản' : 'Thêm tài khoản mới'}
-        open={modalOpen}
-        onCancel={() => {
-          setModalOpen(false)
-          form.resetFields()
-          setEditingUser(null)
-        }}
-        onOk={() => form.submit()}
-        width={isMobile ? '100%' : 520}
-        style={isMobile ? { top: 20 } : undefined}
-      >
-        <Form form={form} layout="vertical" onFinish={handleSubmit}>
-          <Form.Item
-            name="name"
-            label="Họ tên"
-            rules={[{ required: true, message: 'Vui lòng nhập họ tên' }]}
-          >
-            <Input prefix={<UserOutlined />} placeholder="Nhập họ tên" />
-          </Form.Item>
-
-          <Form.Item
-            name="email"
-            label="Email"
-            rules={[
-              { required: true, message: 'Vui lòng nhập email' },
-              { type: 'email', message: 'Email không hợp lệ' },
-            ]}
-          >
-            <Input prefix={<MailOutlined />} placeholder="Nhập email" />
-          </Form.Item>
-
-          <Form.Item
-            name="password"
-            label={editingUser ? 'Mật khẩu mới (để trống nếu không đổi)' : 'Mật khẩu'}
-            rules={editingUser ? [] : [{ required: true, message: 'Vui lòng nhập mật khẩu' }]}
-          >
-            <Input.Password prefix={<LockOutlined />} placeholder="Nhập mật khẩu" />
-          </Form.Item>
-
-          <Form.Item
-            name="phone"
-            label="Số điện thoại"
-          >
-            <Input prefix={<PhoneOutlined />} placeholder="Nhập số điện thoại" />
-          </Form.Item>
-
-          <Form.Item
-            name="role"
-            label="Vai trò"
-            rules={[{ required: true, message: 'Vui lòng chọn vai trò' }]}
-          >
-            <Select placeholder="Chọn vai trò">
-              <Select.Option value="ADMIN">
-                <Tag color="#f5222d">Quản trị viên</Tag>
-              </Select.Option>
-              <Select.Option value="MANAGER">
-                <Tag color="#1890ff">Quản lý</Tag>
-              </Select.Option>
-              <Select.Option value="SALES">
-                <Tag color="#52c41a">Nhân viên</Tag>
-              </Select.Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item
-            name="active"
-            label="Trạng thái"
-            valuePropName="checked"
-          >
-            <Switch checkedChildren="Hoạt động" unCheckedChildren="Khóa" />
-          </Form.Item>
-        </Form>
-      </Modal>
-    </div>
+      </div>
   )
 }
 

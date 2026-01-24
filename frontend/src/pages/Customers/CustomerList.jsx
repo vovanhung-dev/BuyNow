@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
-  Table, Button, Input, Space, Modal, Form, Select, message, Tag, Popconfirm, Row, Col, Card, Tooltip, Grid, Descriptions
+  Table, Button, Input, Space, Modal, message, Tag, Popconfirm, Row, Col, Card, Tooltip, Grid, Descriptions
 } from 'antd'
 import {
   PlusOutlined,
   SearchOutlined,
   EditOutlined,
   DeleteOutlined,
-  UserOutlined,
   PhoneOutlined,
   EyeOutlined,
   EnvironmentOutlined,
@@ -17,16 +17,14 @@ import { customersAPI, customerGroupsAPI } from '../../services/api'
 const { useBreakpoint } = Grid
 
 const CustomerList = () => {
+  const navigate = useNavigate()
   const [customers, setCustomers] = useState([])
   const [groups, setGroups] = useState([])
   const [loading, setLoading] = useState(false)
-  const [modalOpen, setModalOpen] = useState(false)
   const [viewModalOpen, setViewModalOpen] = useState(false)
-  const [editingCustomer, setEditingCustomer] = useState(null)
   const [viewingCustomer, setViewingCustomer] = useState(null)
   const [search, setSearch] = useState('')
   const [pagination, setPagination] = useState({ current: 1, pageSize: 20, total: 0 })
-  const [form] = Form.useForm()
   const screens = useBreakpoint()
 
   const isMobile = !screens.md
@@ -66,15 +64,11 @@ const CustomerList = () => {
   }
 
   const handleCreate = () => {
-    setEditingCustomer(null)
-    form.resetFields()
-    setModalOpen(true)
+    navigate('/customers/create')
   }
 
   const handleEdit = (record) => {
-    setEditingCustomer(record)
-    form.setFieldsValue(record)
-    setModalOpen(true)
+    navigate(`/customers/${record.id}/edit`)
   }
 
   const handleView = (record) => {
@@ -89,22 +83,6 @@ const CustomerList = () => {
       loadCustomers()
     } catch (error) {
       message.error(error.message || 'Lỗi xóa khách hàng')
-    }
-  }
-
-  const handleSubmit = async (values) => {
-    try {
-      if (editingCustomer) {
-        await customersAPI.update(editingCustomer.id, values)
-        message.success('Cập nhật khách hàng thành công')
-      } else {
-        await customersAPI.create(values)
-        message.success('Tạo khách hàng thành công')
-      }
-      setModalOpen(false)
-      loadCustomers()
-    } catch (error) {
-      message.error(error.message || 'Lỗi lưu khách hàng')
     }
   }
 
@@ -435,79 +413,6 @@ const CustomerList = () => {
             </Descriptions.Item>
           </Descriptions>
         )}
-      </Modal>
-
-      {/* Modal Form */}
-      <Modal
-        title={
-          <Space>
-            <UserOutlined />
-            {editingCustomer ? 'Sửa khách hàng' : 'Thêm khách hàng mới'}
-          </Space>
-        }
-        open={modalOpen}
-        onCancel={() => setModalOpen(false)}
-        onOk={() => form.submit()}
-        okText={editingCustomer ? 'Cập nhật' : 'Thêm mới'}
-        cancelText="Hủy"
-        width={isMobile ? '100%' : 640}
-        style={isMobile ? { top: 20 } : undefined}
-        destroyOnClose
-      >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleSubmit}
-          style={{ marginTop: 24 }}
-        >
-          <Row gutter={16}>
-            <Col xs={24} sm={12}>
-              <Form.Item name="code" label="Mã khách hàng">
-                <Input placeholder="Tự động sinh nếu để trống" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} sm={12}>
-              <Form.Item name="customerGroupId" label="Nhóm khách hàng">
-                <Select allowClear placeholder="Chọn nhóm">
-                  {groups.map((g) => (
-                    <Select.Option key={g.id} value={g.id}>
-                      {g.name}
-                    </Select.Option>
-                  ))}
-                </Select>
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Form.Item
-            name="name"
-            label="Tên khách hàng"
-            rules={[{ required: true, message: 'Vui lòng nhập tên khách hàng' }]}
-          >
-            <Input placeholder="Nhập tên khách hàng" />
-          </Form.Item>
-
-          <Form.Item name="phone" label="Số điện thoại">
-            <Input placeholder="Nhập số điện thoại" />
-          </Form.Item>
-
-          <Form.Item name="address" label="Địa chỉ">
-            <Input.TextArea rows={2} placeholder="Nhập địa chỉ chi tiết" />
-          </Form.Item>
-
-          <Row gutter={16}>
-            <Col xs={24} sm={12}>
-              <Form.Item name="district" label="Quận/Huyện">
-                <Input placeholder="Quận/Huyện" />
-              </Form.Item>
-            </Col>
-            <Col xs={24} sm={12}>
-              <Form.Item name="ward" label="Phường/Xã">
-                <Input placeholder="Phường/Xã" />
-              </Form.Item>
-            </Col>
-          </Row>
-        </Form>
       </Modal>
     </div>
   )

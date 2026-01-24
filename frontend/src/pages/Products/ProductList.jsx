@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
-  Table, Button, Input, Space, Modal, Form, InputNumber, Switch, message,
-  Typography, Tag, Popconfirm, Card, Row, Col, Grid, Descriptions
+  Table, Button, Input, Space, Modal, message,
+  Typography, Tag, Popconfirm, Card, Grid, Descriptions
 } from 'antd'
 import {
   PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined,
@@ -13,15 +14,13 @@ const { Title } = Typography
 const { useBreakpoint } = Grid
 
 const ProductList = () => {
+  const navigate = useNavigate()
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(false)
-  const [modalOpen, setModalOpen] = useState(false)
   const [viewModalOpen, setViewModalOpen] = useState(false)
-  const [editingProduct, setEditingProduct] = useState(null)
   const [viewingProduct, setViewingProduct] = useState(null)
   const [search, setSearch] = useState('')
   const [pagination, setPagination] = useState({ current: 1, pageSize: 20, total: 0 })
-  const [form] = Form.useForm()
   const screens = useBreakpoint()
 
   const isMobile = !screens.md
@@ -48,22 +47,11 @@ const ProductList = () => {
   }
 
   const handleCreate = () => {
-    setEditingProduct(null)
-    form.resetFields()
-    form.setFieldsValue({ active: true, stock: 0, minStock: 10 })
-    setModalOpen(true)
+    navigate('/products/create')
   }
 
   const handleEdit = (record) => {
-    setEditingProduct(record)
-    form.setFieldsValue({
-      ...record,
-      wholesalePrice: Number(record.wholesalePrice),
-      mediumDealerPrice: Number(record.mediumDealerPrice),
-      largeDealerPrice: Number(record.largeDealerPrice),
-      retailPrice: Number(record.retailPrice),
-    })
-    setModalOpen(true)
+    navigate(`/products/${record.id}/edit`)
   }
 
   const handleView = (record) => {
@@ -78,22 +66,6 @@ const ProductList = () => {
       loadProducts()
     } catch (error) {
       message.error(error.message || 'Lỗi xóa sản phẩm')
-    }
-  }
-
-  const handleSubmit = async (values) => {
-    try {
-      if (editingProduct) {
-        await productsAPI.update(editingProduct.id, values)
-        message.success('Cập nhật sản phẩm thành công')
-      } else {
-        await productsAPI.create(values)
-        message.success('Tạo sản phẩm thành công')
-      }
-      setModalOpen(false)
-      loadProducts()
-    } catch (error) {
-      message.error(error.message || 'Lỗi lưu sản phẩm')
     }
   }
 
@@ -314,106 +286,6 @@ const ProductList = () => {
             </Descriptions.Item>
           </Descriptions>
         )}
-      </Modal>
-
-      {/* Edit/Create Modal */}
-      <Modal
-        title={editingProduct ? 'Sửa sản phẩm' : 'Thêm sản phẩm'}
-        open={modalOpen}
-        onCancel={() => setModalOpen(false)}
-        onOk={() => form.submit()}
-        width={isMobile ? '100%' : 700}
-        style={isMobile ? { top: 20 } : undefined}
-      >
-        <Form form={form} layout="vertical" onFinish={handleSubmit}>
-          <Row gutter={16}>
-            <Col xs={24} sm={8}>
-              <Form.Item
-                name="sku"
-                label="Mã SKU"
-                rules={[{ required: true, message: 'Vui lòng nhập SKU' }]}
-              >
-                <Input />
-              </Form.Item>
-            </Col>
-            <Col xs={24} sm={10}>
-              <Form.Item
-                name="name"
-                label="Tên sản phẩm"
-                rules={[{ required: true, message: 'Vui lòng nhập tên' }]}
-              >
-                <Input />
-              </Form.Item>
-            </Col>
-            <Col xs={24} sm={6}>
-              <Form.Item name="unit" label="Đơn vị">
-                <Input placeholder="gói, chai..." />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Title level={5}>Bảng giá</Title>
-          <Row gutter={16}>
-            <Col xs={12} sm={6}>
-              <Form.Item name="wholesalePrice" label="Giá bán buôn">
-                <InputNumber
-                  style={{ width: '100%' }}
-                  formatter={(val) => `${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                  parser={(val) => val.replace(/\,/g, '')}
-                  min={0}
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={12} sm={6}>
-              <Form.Item name="mediumDealerPrice" label="Giá ĐL vừa">
-                <InputNumber
-                  style={{ width: '100%' }}
-                  formatter={(val) => `${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                  parser={(val) => val.replace(/\,/g, '')}
-                  min={0}
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={12} sm={6}>
-              <Form.Item name="largeDealerPrice" label="Giá ĐL lớn">
-                <InputNumber
-                  style={{ width: '100%' }}
-                  formatter={(val) => `${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                  parser={(val) => val.replace(/\,/g, '')}
-                  min={0}
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={12} sm={6}>
-              <Form.Item name="retailPrice" label="Giá bán lẻ">
-                <InputNumber
-                  style={{ width: '100%' }}
-                  formatter={(val) => `${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                  parser={(val) => val.replace(/\,/g, '')}
-                  min={0}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={16}>
-            <Col xs={12} sm={6}>
-              <Form.Item name="stock" label="Tồn kho">
-                <InputNumber style={{ width: '100%' }} min={0} />
-              </Form.Item>
-            </Col>
-            <Col xs={12} sm={6}>
-              <Form.Item name="minStock" label="Tồn tối thiểu">
-                <InputNumber style={{ width: '100%' }} min={0} />
-              </Form.Item>
-            </Col>
-            <Col xs={24} sm={6}>
-              <Form.Item name="active" label="Hoạt động" valuePropName="checked">
-                <Switch />
-              </Form.Item>
-            </Col>
-          </Row>
-        </Form>
       </Modal>
     </div>
   )
