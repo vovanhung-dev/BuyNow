@@ -5,8 +5,10 @@ import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import CustomerList from './pages/Customers/CustomerList'
 import CustomerForm from './pages/Customers/CustomerForm'
+import CustomerDetail from './pages/Customers/CustomerDetail'
 import ProductList from './pages/Products/ProductList'
 import ProductForm from './pages/Products/ProductForm'
+import ProductDetail from './pages/Products/ProductDetail'
 import OrderList from './pages/Orders/OrderList'
 import OrderCreate from './pages/Orders/OrderCreate'
 import OrderDetail from './pages/Orders/OrderDetail'
@@ -56,9 +58,11 @@ function App() {
           <Route index element={<Dashboard />} />
           <Route path="customers" element={<CustomerList />} />
           <Route path="customers/create" element={<CustomerForm />} />
+          <Route path="customers/:id" element={<CustomerDetail />} />
           <Route path="customers/:id/edit" element={<CustomerForm />} />
           <Route path="products" element={<ProductList />} />
           <Route path="products/create" element={<ProductForm />} />
+          <Route path="products/:id" element={<ProductDetail />} />
           <Route path="products/:id/edit" element={<ProductForm />} />
           <Route path="orders" element={<OrderList />} />
           <Route path="orders/create" element={<OrderCreate />} />

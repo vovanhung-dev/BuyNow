@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  Table, Button, Input, Space, Modal, message, Tag, Popconfirm, Row, Col, Card, Tooltip, Grid, Descriptions
+  Table, Button, Input, Space, message, Tag, Popconfirm, Row, Col, Card, Tooltip, Grid
 } from 'antd'
 import {
   PlusOutlined,
@@ -24,8 +24,6 @@ const CustomerList = () => {
   const [groups, setGroups] = useState([])
   const [loading, setLoading] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
-  const [viewModalOpen, setViewModalOpen] = useState(false)
-  const [viewingCustomer, setViewingCustomer] = useState(null)
   const [search, setSearch] = useState('')
   const [pagination, setPagination] = useState({ current: 1, pageSize: 20, total: 0 })
   const screens = useBreakpoint()
@@ -107,8 +105,7 @@ const CustomerList = () => {
   }
 
   const handleView = (record) => {
-    setViewingCustomer(record)
-    setViewModalOpen(true)
+    navigate(`/customers/${record.id}`)
   }
 
   const handleDelete = async (id) => {
@@ -137,18 +134,8 @@ const CustomerList = () => {
     return (
       <Card
         size="small"
-        style={{ marginBottom: 12 }}
-        actions={[
-          <EyeOutlined key="view" onClick={() => handleView(customer)} />,
-          <EditOutlined key="edit" onClick={() => handleEdit(customer)} />,
-          <Popconfirm
-            key="delete"
-            title="Xác nhận xóa?"
-            onConfirm={() => handleDelete(customer.id)}
-          >
-            <DeleteOutlined style={{ color: '#ff4d4f' }} />
-          </Popconfirm>,
-        ]}
+        style={{ marginBottom: 12, cursor: 'pointer' }}
+        onClick={() => handleView(customer)}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div style={{ flex: 1 }}>
@@ -418,43 +405,6 @@ const CustomerList = () => {
           }}
         />
       )}
-
-      {/* View Modal for Mobile */}
-      <Modal
-        title="Chi tiết khách hàng"
-        open={viewModalOpen}
-        onCancel={() => setViewModalOpen(false)}
-        footer={[
-          <Button key="edit" type="primary" onClick={() => {
-            setViewModalOpen(false)
-            handleEdit(viewingCustomer)
-          }}>
-            Chỉnh sửa
-          </Button>
-        ]}
-      >
-        {viewingCustomer && (
-          <Descriptions column={1} size="small">
-            <Descriptions.Item label="Mã KH">{viewingCustomer.code}</Descriptions.Item>
-            <Descriptions.Item label="Tên">{viewingCustomer.name}</Descriptions.Item>
-            <Descriptions.Item label="Nhóm KH">
-              {viewingCustomer.customerGroup?.name || '—'}
-            </Descriptions.Item>
-            <Descriptions.Item label="Điện thoại">{viewingCustomer.phone || '—'}</Descriptions.Item>
-            <Descriptions.Item label="Địa chỉ">{viewingCustomer.address || '—'}</Descriptions.Item>
-            <Descriptions.Item label="Quận/Huyện">{viewingCustomer.district || '—'}</Descriptions.Item>
-            <Descriptions.Item label="Phường/Xã">{viewingCustomer.ward || '—'}</Descriptions.Item>
-            <Descriptions.Item label="Công nợ">
-              <span style={{
-                fontWeight: 600,
-                color: Number(viewingCustomer.totalDebt) > 0 ? '#de350b' : '#22a06b'
-              }}>
-                {Number(viewingCustomer.totalDebt).toLocaleString('vi-VN')} đ
-              </span>
-            </Descriptions.Item>
-          </Descriptions>
-        )}
-      </Modal>
     </div>
   )
 }

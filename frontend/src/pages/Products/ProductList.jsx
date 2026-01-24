@@ -1,12 +1,12 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  Table, Button, Input, Space, Modal, message,
-  Typography, Tag, Popconfirm, Card, Grid, Descriptions
+  Table, Button, Input, Space, message,
+  Typography, Tag, Popconfirm, Card, Grid
 } from 'antd'
 import {
   PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined,
-  WarningOutlined, EyeOutlined
+  WarningOutlined
 } from '@ant-design/icons'
 import { productsAPI } from '../../services/api'
 import PullToRefresh from '../../components/common/PullToRefresh'
@@ -20,8 +20,6 @@ const ProductList = () => {
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
-  const [viewModalOpen, setViewModalOpen] = useState(false)
-  const [viewingProduct, setViewingProduct] = useState(null)
   const [search, setSearch] = useState('')
   const [pagination, setPagination] = useState({ current: 1, pageSize: 20, total: 0 })
   const screens = useBreakpoint()
@@ -89,8 +87,7 @@ const ProductList = () => {
   }
 
   const handleView = (record) => {
-    setViewingProduct(record)
-    setViewModalOpen(true)
+    navigate(`/products/${record.id}`)
   }
 
   const handleDelete = async (id) => {
@@ -187,18 +184,8 @@ const ProductList = () => {
   const ProductCard = ({ product }) => (
     <Card
       size="small"
-      style={{ marginBottom: 12 }}
-      actions={[
-        <EyeOutlined key="view" onClick={() => handleView(product)} />,
-        <EditOutlined key="edit" onClick={() => handleEdit(product)} />,
-        <Popconfirm
-          key="delete"
-          title="Xác nhận xóa?"
-          onConfirm={() => handleDelete(product.id)}
-        >
-          <DeleteOutlined style={{ color: '#ff4d4f' }} />
-        </Popconfirm>,
-      ]}
+      style={{ marginBottom: 12, cursor: 'pointer' }}
+      onClick={() => handleView(product)}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div style={{ flex: 1 }}>
@@ -297,40 +284,6 @@ const ProductList = () => {
           scroll={{ x: 1200 }}
         />
       )}
-
-      {/* View Modal for Mobile */}
-      <Modal
-        title="Chi tiết sản phẩm"
-        open={viewModalOpen}
-        onCancel={() => setViewModalOpen(false)}
-        footer={[
-          <Button key="edit" type="primary" onClick={() => {
-            setViewModalOpen(false)
-            handleEdit(viewingProduct)
-          }}>
-            Chỉnh sửa
-          </Button>
-        ]}
-      >
-        {viewingProduct && (
-          <Descriptions column={1} size="small">
-            <Descriptions.Item label="SKU">{viewingProduct.sku}</Descriptions.Item>
-            <Descriptions.Item label="Tên sản phẩm">{viewingProduct.name}</Descriptions.Item>
-            <Descriptions.Item label="Đơn vị">{viewingProduct.unit || '—'}</Descriptions.Item>
-            <Descriptions.Item label="Giá bán buôn">{formatPrice(viewingProduct.wholesalePrice)}</Descriptions.Item>
-            <Descriptions.Item label="Giá ĐL vừa">{formatPrice(viewingProduct.mediumDealerPrice)}</Descriptions.Item>
-            <Descriptions.Item label="Giá ĐL lớn">{formatPrice(viewingProduct.largeDealerPrice)}</Descriptions.Item>
-            <Descriptions.Item label="Giá bán lẻ">{formatPrice(viewingProduct.retailPrice)}</Descriptions.Item>
-            <Descriptions.Item label="Tồn kho">{viewingProduct.stock}</Descriptions.Item>
-            <Descriptions.Item label="Tồn tối thiểu">{viewingProduct.minStock}</Descriptions.Item>
-            <Descriptions.Item label="Trạng thái">
-              <Tag color={viewingProduct.active ? 'green' : 'red'}>
-                {viewingProduct.active ? 'Hoạt động' : 'Ngừng'}
-              </Tag>
-            </Descriptions.Item>
-          </Descriptions>
-        )}
-      </Modal>
     </div>
   )
 }
