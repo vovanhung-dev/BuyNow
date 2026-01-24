@@ -1030,10 +1030,16 @@ body {
    ================================================ */
 
 .print-invoice {
-  padding: 40px;
+  padding: 0;
   max-width: 800px;
   margin: 0 auto;
   background: #fff;
+}
+
+@media (min-width: 768px) {
+  .print-invoice {
+    padding: 24px;
+  }
 }
 
 .print-invoice .header {
