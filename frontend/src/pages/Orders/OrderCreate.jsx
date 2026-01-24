@@ -379,19 +379,17 @@ const OrderCreate = () => {
                     <Select
                       showSearch
                       placeholder="Tìm và chọn khách hàng..."
-                      optionFilterProp="children"
+                      optionFilterProp="label"
                       onChange={handleCustomerChange}
                       loading={loading}
                       filterOption={(input, option) =>
-                        option.children.toLowerCase().includes(input.toLowerCase())
+                        (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
                       }
-                    >
-                      {customers.map((c) => (
-                        <Select.Option key={c.id} value={c.id}>
-                          {c.name} - {c.code}
-                        </Select.Option>
-                      ))}
-                    </Select>
+                      options={customers.map((c) => ({
+                        value: c.id,
+                        label: `${c.name} - ${c.code}`,
+                      }))}
+                    />
                   </Form.Item>
                 </Col>
                 <Col xs={24} md={8}>
@@ -488,22 +486,20 @@ const OrderCreate = () => {
                 showSearch
                 placeholder="Tìm và thêm sản phẩm..."
                 style={{ width: '100%' }}
-                optionFilterProp="children"
+                optionFilterProp="label"
                 onChange={handleAddProduct}
                 value={null}
                 loading={loading}
                 size="large"
                 filterOption={(input, option) =>
-                  option.children.toLowerCase().includes(input.toLowerCase())
+                  (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
                 }
                 suffixIcon={<PlusOutlined style={{ color: '#2a9299' }} />}
-              >
-                {products.map((p) => (
-                  <Select.Option key={p.id} value={p.id}>
-                    {p.sku} - {p.name}
-                  </Select.Option>
-                ))}
-              </Select>
+                options={products.map((p) => ({
+                  value: p.id,
+                  label: `${p.sku} - ${p.name}`,
+                }))}
+              />
             </div>
 
             {orderItems.length === 0 ? (

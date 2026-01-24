@@ -268,17 +268,15 @@ const StockList = () => {
             <Select
               showSearch
               placeholder="Chọn sản phẩm"
-              optionFilterProp="children"
+              optionFilterProp="label"
               filterOption={(input, option) =>
-                option.children.toLowerCase().includes(input.toLowerCase())
+                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
               }
-            >
-              {products.map((p) => (
-                <Select.Option key={p.id} value={p.id}>
-                  {p.sku} - {p.name}
-                </Select.Option>
-              ))}
-            </Select>
+              options={products.map((p) => ({
+                value: p.id,
+                label: `${p.sku} - ${p.name}`,
+              }))}
+            />
           </Form.Item>
           <Form.Item
             name="quantity"
