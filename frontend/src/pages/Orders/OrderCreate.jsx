@@ -109,6 +109,7 @@ const OrderCreate = () => {
         quantity: 1,
         unitPrice,
         total: unitPrice,
+        note: '',
       },
     ])
   }
@@ -117,6 +118,19 @@ const OrderCreate = () => {
     const newItems = [...orderItems]
     newItems[index].quantity = quantity
     newItems[index].total = quantity * newItems[index].unitPrice
+    setOrderItems(newItems)
+  }
+
+  const handlePriceChange = (index, price) => {
+    const newItems = [...orderItems]
+    newItems[index].unitPrice = price
+    newItems[index].total = price * newItems[index].quantity
+    setOrderItems(newItems)
+  }
+
+  const handleNoteChange = (index, note) => {
+    const newItems = [...orderItems]
+    newItems[index].note = note
     setOrderItems(newItems)
   }
 
@@ -153,6 +167,8 @@ const OrderCreate = () => {
         items: orderItems.map((item) => ({
           productId: item.productId,
           quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          note: item.note,
         })),
         discount: totals.discount,
         paidAmount: totals.paidAmount,
@@ -204,9 +220,28 @@ const OrderCreate = () => {
           />
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: 12, color: '#788492' }}>{formatPrice(item.unitPrice)}</div>
-          <div style={{ fontWeight: 600, color: '#2a9299' }}>{formatPrice(item.total)}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ fontSize: 12, color: '#788492' }}>Giá:</span>
+            <InputNumber
+              min={0}
+              value={item.unitPrice}
+              onChange={(v) => handlePriceChange(index, v)}
+              size="small"
+              formatter={(v) => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+              parser={(v) => v.replace(/\,/g, '')}
+              style={{ width: 100 }}
+            />
+          </div>
+          <div style={{ fontWeight: 600, color: '#2a9299', marginTop: 4 }}>{formatPrice(item.total)}</div>
         </div>
+      </div>
+      <div style={{ marginTop: 8 }}>
+        <Input
+          placeholder="Ghi chú sản phẩm..."
+          value={item.note}
+          onChange={(e) => handleNoteChange(index, e.target.value)}
+          size="small"
+        />
       </div>
     </div>
   )
@@ -284,22 +319,43 @@ const OrderCreate = () => {
       title: 'Đơn giá',
       dataIndex: 'unitPrice',
       key: 'unitPrice',
-      width: 130,
-      align: 'right',
-      render: (val) => (
-        <span style={{ color: '#788492' }}>{formatPrice(val)}</span>
+      width: 140,
+      render: (val, _, index) => (
+        <InputNumber
+          min={0}
+          value={val}
+          onChange={(v) => handlePriceChange(index, v)}
+          size="small"
+          formatter={(v) => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+          parser={(v) => v.replace(/\,/g, '')}
+          style={{ width: 110 }}
+        />
       ),
     },
     {
       title: 'Thành tiền',
       dataIndex: 'total',
       key: 'total',
-      width: 140,
+      width: 130,
       align: 'right',
       render: (val) => (
         <span style={{ fontWeight: 600, color: '#2a9299' }}>
           {formatPrice(val)}
         </span>
+      ),
+    },
+    {
+      title: 'Ghi chú',
+      dataIndex: 'note',
+      key: 'note',
+      width: 150,
+      render: (val, _, index) => (
+        <Input
+          placeholder="Ghi chú..."
+          value={val}
+          onChange={(e) => handleNoteChange(index, e.target.value)}
+          size="small"
+        />
       ),
     },
     {

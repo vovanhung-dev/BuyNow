@@ -116,6 +116,11 @@ const OrderDetail = () => {
           <div style={{ fontSize: 12, color: '#788492', marginTop: 2 }}>
             {item.unit || '—'} × {item.quantity}
           </div>
+          {item.note && (
+            <div style={{ fontSize: 12, color: '#faad14', marginTop: 4, fontStyle: 'italic' }}>
+              📝 {item.note}
+            </div>
+          )}
         </div>
         <div style={{ textAlign: 'right' }}>
           <div style={{ fontSize: 12, color: '#788492' }}>{formatPrice(item.unitPrice)}</div>
@@ -132,6 +137,13 @@ const OrderDetail = () => {
     { title: 'SL', dataIndex: 'quantity', key: 'quantity', width: 80 },
     { title: 'Đơn giá', dataIndex: 'unitPrice', key: 'unitPrice', width: 120, render: formatPrice },
     { title: 'Thành tiền', dataIndex: 'total', key: 'total', width: 120, render: formatPrice },
+    {
+      title: 'Ghi chú',
+      dataIndex: 'note',
+      key: 'note',
+      width: 150,
+      render: (val) => val ? <span style={{ color: '#faad14', fontStyle: 'italic' }}>{val}</span> : '-',
+    },
   ]
 
   const paymentColumns = [
@@ -282,25 +294,25 @@ const OrderDetail = () => {
               summary={() => (
                 <Table.Summary>
                   <Table.Summary.Row>
-                    <Table.Summary.Cell colSpan={5} align="right"><strong>Tổng tiền hàng:</strong></Table.Summary.Cell>
+                    <Table.Summary.Cell colSpan={6} align="right"><strong>Tổng tiền hàng:</strong></Table.Summary.Cell>
                     <Table.Summary.Cell>{formatPrice(order.subtotal)}</Table.Summary.Cell>
                   </Table.Summary.Row>
                   {Number(order.discount) > 0 && (
                     <Table.Summary.Row>
-                      <Table.Summary.Cell colSpan={5} align="right">Chiết khấu:</Table.Summary.Cell>
+                      <Table.Summary.Cell colSpan={6} align="right">Chiết khấu:</Table.Summary.Cell>
                       <Table.Summary.Cell>-{formatPrice(order.discount)}</Table.Summary.Cell>
                     </Table.Summary.Row>
                   )}
                   <Table.Summary.Row>
-                    <Table.Summary.Cell colSpan={5} align="right"><strong>Tổng thanh toán:</strong></Table.Summary.Cell>
+                    <Table.Summary.Cell colSpan={6} align="right"><strong>Tổng thanh toán:</strong></Table.Summary.Cell>
                     <Table.Summary.Cell><strong style={{ color: '#1890ff' }}>{formatPrice(order.total)}</strong></Table.Summary.Cell>
                   </Table.Summary.Row>
                   <Table.Summary.Row>
-                    <Table.Summary.Cell colSpan={5} align="right">Đã thanh toán:</Table.Summary.Cell>
+                    <Table.Summary.Cell colSpan={6} align="right">Đã thanh toán:</Table.Summary.Cell>
                     <Table.Summary.Cell style={{ color: 'green' }}>{formatPrice(order.paidAmount)}</Table.Summary.Cell>
                   </Table.Summary.Row>
                   <Table.Summary.Row>
-                    <Table.Summary.Cell colSpan={5} align="right"><strong>Còn nợ:</strong></Table.Summary.Cell>
+                    <Table.Summary.Cell colSpan={6} align="right"><strong>Còn nợ:</strong></Table.Summary.Cell>
                     <Table.Summary.Cell><strong style={{ color: debtAmount > 0 ? 'red' : 'green' }}>{formatPrice(order.debtAmount)}</strong></Table.Summary.Cell>
                   </Table.Summary.Row>
                 </Table.Summary>

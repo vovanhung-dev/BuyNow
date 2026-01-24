@@ -152,6 +152,7 @@ model OrderItem {
   quantity    Int
   unitPrice   Decimal @db.Decimal(15, 0)
   total       Decimal @db.Decimal(15, 0)
+  note        String? @db.VarChar(500)
 
   @@index([orderId])
   @@map("order_items")

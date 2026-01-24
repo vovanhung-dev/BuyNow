@@ -8,6 +8,8 @@ const prisma = new PrismaClient();
 const orderItemSchema = z.object({
   productId: z.string().min(1, 'Sản phẩm không được để trống'),
   quantity: z.number().int().min(1, 'Số lượng phải lớn hơn 0'),
+  unitPrice: z.number().min(0).optional(),
+  note: z.string().optional().nullable(),
 });
 
 const createSchema = z.object({
@@ -222,7 +224,8 @@ const create = async (req, res) => {
         });
       }
 
-      const unitPrice = getPriceByType(product, priceType);
+      // Use custom unit price if provided, otherwise use default price by type
+      const unitPrice = item.unitPrice !== undefined ? item.unitPrice : getPriceByType(product, priceType);
       const total = unitPrice * item.quantity;
 
       orderItems.push({
@@ -233,6 +236,7 @@ const create = async (req, res) => {
         quantity: item.quantity,
         unitPrice,
         total,
+        note: item.note || null,
       });
 
       subtotal += total;
