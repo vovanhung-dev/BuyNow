@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Card, Form, Input, Select, Button, Space, Typography, message, Grid } from 'antd'
-import { ArrowLeftOutlined, SaveOutlined, UserOutlined, PhoneOutlined, HomeOutlined } from '@ant-design/icons'
+import { Card, Form, Input, Select, Button, Typography, message, Grid } from 'antd'
+import { ArrowLeftOutlined, SaveOutlined, UserOutlined, PhoneOutlined, EnvironmentOutlined } from '@ant-design/icons'
 import { customersAPI, customerGroupsAPI } from '../../services/api'
 
 const { Title } = Typography
@@ -67,57 +67,85 @@ const CustomerForm = () => {
   }
 
   return (
-    <div className="animate-fade-in">
-      {/* Header */}
+    <div className="animate-fade-in" style={{
+      paddingBottom: isMobile ? 100 : 24,
+      minHeight: isMobile ? '100vh' : 'auto'
+    }}>
+      {/* Header - Sticky on mobile */}
       <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-        marginBottom: 16
+        position: isMobile ? 'sticky' : 'relative',
+        top: isMobile ? 0 : 'auto',
+        zIndex: 10,
+        background: '#fff',
+        padding: isMobile ? '12px 0' : '0 0 16px 0',
+        marginBottom: isMobile ? 0 : 16,
+        borderBottom: isMobile ? '1px solid #f0f0f0' : 'none',
       }}>
-        <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/customers')} />
-        <Title level={4} style={{ margin: 0, fontSize: isMobile ? 18 : 24 }}>
-          {isEdit ? 'Cập nhật khách hàng' : 'Thêm khách hàng mới'}
-        </Title>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <Button
+            icon={<ArrowLeftOutlined />}
+            onClick={() => navigate('/customers')}
+            size={isMobile ? 'middle' : 'middle'}
+            style={{
+              minWidth: 40,
+              height: isMobile ? 40 : 32,
+            }}
+          />
+          <Title level={4} style={{ margin: 0, fontSize: isMobile ? 18 : 20 }}>
+            {isEdit ? 'Sửa khách hàng' : 'Thêm khách hàng'}
+          </Title>
+        </div>
       </div>
 
-      <Card loading={loading} style={{ maxWidth: 800 }}>
+      <Card
+        loading={loading}
+        style={{
+          maxWidth: isMobile ? '100%' : 600,
+          border: isMobile ? 'none' : undefined,
+          boxShadow: isMobile ? 'none' : undefined,
+        }}
+        bodyStyle={{
+          padding: isMobile ? '16px 0' : 24,
+        }}
+      >
         <Form
           form={form}
           layout="vertical"
           onFinish={handleSubmit}
           initialValues={{ customerGroupId: null }}
+          size={isMobile ? 'large' : 'middle'}
         >
           <Form.Item
             name="name"
-            label="Tên khách hàng"
+            label={<span style={{ fontWeight: 500 }}>Tên khách hàng <span style={{ color: '#ff4d4f' }}>*</span></span>}
             rules={[{ required: true, message: 'Vui lòng nhập tên khách hàng' }]}
           >
             <Input
-              prefix={<UserOutlined />}
+              prefix={<UserOutlined style={{ color: '#bfbfbf' }} />}
               placeholder="Nhập tên khách hàng"
-              size={isMobile ? 'large' : 'middle'}
+              style={{ height: isMobile ? 48 : 40 }}
             />
           </Form.Item>
 
           <Form.Item
             name="code"
-            label="Mã khách hàng"
+            label={<span style={{ fontWeight: 500 }}>Mã khách hàng</span>}
           >
             <Input
               placeholder="Mã tự động nếu để trống"
-              size={isMobile ? 'large' : 'middle'}
+              style={{ height: isMobile ? 48 : 40 }}
             />
           </Form.Item>
 
           <Form.Item
             name="customerGroupId"
-            label="Nhóm khách hàng"
+            label={<span style={{ fontWeight: 500 }}>Nhóm khách hàng</span>}
           >
             <Select
               placeholder="Chọn nhóm khách hàng"
               allowClear
-              size={isMobile ? 'large' : 'middle'}
+              style={{ height: isMobile ? 48 : 40 }}
+              dropdownStyle={{ maxHeight: 300 }}
               options={customerGroups.map((g) => ({
                 value: g.id,
                 label: g.name,
@@ -127,73 +155,103 @@ const CustomerForm = () => {
 
           <Form.Item
             name="phone"
-            label="Số điện thoại"
+            label={<span style={{ fontWeight: 500 }}>Số điện thoại</span>}
           >
             <Input
-              prefix={<PhoneOutlined />}
+              prefix={<PhoneOutlined style={{ color: '#bfbfbf' }} />}
               placeholder="Nhập số điện thoại"
-              size={isMobile ? 'large' : 'middle'}
+              style={{ height: isMobile ? 48 : 40 }}
+              inputMode="tel"
             />
           </Form.Item>
 
           <Form.Item
             name="address"
-            label="Địa chỉ"
+            label={<span style={{ fontWeight: 500 }}>Địa chỉ</span>}
           >
             <TextArea
-              placeholder="Nhập địa chỉ"
-              rows={2}
-              size={isMobile ? 'large' : 'middle'}
+              placeholder="Nhập địa chỉ chi tiết"
+              rows={isMobile ? 3 : 2}
+              style={{ fontSize: isMobile ? 16 : 14 }}
             />
           </Form.Item>
 
-          <Form.Item
-            name="district"
-            label="Quận/Huyện"
-          >
-            <Input
-              prefix={<HomeOutlined />}
-              placeholder="Nhập quận/huyện"
-              size={isMobile ? 'large' : 'middle'}
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="ward"
-            label="Phường/Xã"
-          >
-            <Input
-              placeholder="Nhập phường/xã"
-              size={isMobile ? 'large' : 'middle'}
-            />
-          </Form.Item>
-
-          {/* Action Buttons */}
           <div style={{
-            display: 'flex',
-            gap: 12,
-            marginTop: 24,
-            flexDirection: isMobile ? 'column' : 'row'
+            display: 'grid',
+            gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+            gap: isMobile ? 0 : 16
           }}>
-            <Button
-              type="primary"
-              htmlType="submit"
-              icon={<SaveOutlined />}
-              loading={saving}
-              size={isMobile ? 'large' : 'middle'}
-              style={{ flex: isMobile ? 'unset' : 1, maxWidth: isMobile ? '100%' : 200 }}
+            <Form.Item
+              name="district"
+              label={<span style={{ fontWeight: 500 }}>Quận/Huyện</span>}
             >
-              {isEdit ? 'Cập nhật' : 'Thêm mới'}
-            </Button>
-            <Button
-              onClick={() => navigate('/customers')}
-              size={isMobile ? 'large' : 'middle'}
+              <Input
+                prefix={<EnvironmentOutlined style={{ color: '#bfbfbf' }} />}
+                placeholder="Nhập quận/huyện"
+                style={{ height: isMobile ? 48 : 40 }}
+              />
+            </Form.Item>
+
+            <Form.Item
+              name="ward"
+              label={<span style={{ fontWeight: 500 }}>Phường/Xã</span>}
             >
-              Hủy
-            </Button>
+              <Input
+                placeholder="Nhập phường/xã"
+                style={{ height: isMobile ? 48 : 40 }}
+              />
+            </Form.Item>
           </div>
         </Form>
       </Card>
+
+      {/* Fixed Footer on Mobile */}
+      {isMobile ? (
+        <div style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          padding: '12px 16px',
+          background: '#fff',
+          borderTop: '1px solid #f0f0f0',
+          boxShadow: '0 -2px 8px rgba(0,0,0,0.08)',
+          display: 'flex',
+          gap: 12,
+          zIndex: 100,
+        }}>
+          <Button
+            onClick={() => navigate('/customers')}
+            style={{ flex: 1, height: 48 }}
+          >
+            Hủy
+          </Button>
+          <Button
+            type="primary"
+            icon={<SaveOutlined />}
+            loading={saving}
+            onClick={() => form.submit()}
+            style={{ flex: 2, height: 48 }}
+          >
+            {isEdit ? 'Cập nhật' : 'Thêm mới'}
+          </Button>
+        </div>
+      ) : (
+        <div style={{ marginTop: 24, display: 'flex', gap: 12 }}>
+          <Button
+            type="primary"
+            htmlType="submit"
+            icon={<SaveOutlined />}
+            loading={saving}
+            onClick={() => form.submit()}
+          >
+            {isEdit ? 'Cập nhật' : 'Thêm mới'}
+          </Button>
+          <Button onClick={() => navigate('/customers')}>
+            Hủy
+          </Button>
+        </div>
+      )}
     </div>
   )
 }

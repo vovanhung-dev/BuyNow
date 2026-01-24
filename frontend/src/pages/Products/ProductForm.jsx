@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Card, Form, Input, InputNumber, Switch, Button, Space, Typography, message, Grid, Row, Col } from 'antd'
+import { Card, Form, Input, InputNumber, Switch, Button, Typography, message, Grid } from 'antd'
 import { ArrowLeftOutlined, SaveOutlined } from '@ant-design/icons'
 import { productsAPI } from '../../services/api'
 
-const { Title, Text } = Typography
+const { Title } = Typography
 const { useBreakpoint } = Grid
 
 const ProductForm = () => {
@@ -57,22 +57,61 @@ const ProductForm = () => {
   const priceFormatter = (val) => `${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
   const priceParser = (val) => val.replace(/\,/g, '')
 
+  // Price Input Component for Mobile
+  const PriceField = ({ name, label }) => (
+    <Form.Item
+      name={name}
+      label={<span style={{ fontWeight: 500, fontSize: isMobile ? 13 : 14 }}>{label}</span>}
+      style={{ marginBottom: isMobile ? 12 : 16 }}
+    >
+      <InputNumber
+        min={0}
+        style={{ width: '100%', height: isMobile ? 48 : 40 }}
+        formatter={priceFormatter}
+        parser={priceParser}
+        placeholder="0"
+        controls={false}
+        inputMode="numeric"
+      />
+    </Form.Item>
+  )
+
   return (
-    <div className="animate-fade-in">
-      {/* Header */}
+    <div className="animate-fade-in" style={{
+      paddingBottom: isMobile ? 100 : 24,
+      minHeight: isMobile ? '100vh' : 'auto'
+    }}>
+      {/* Header - Sticky on mobile */}
       <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-        marginBottom: 16
+        position: isMobile ? 'sticky' : 'relative',
+        top: isMobile ? 0 : 'auto',
+        zIndex: 10,
+        background: '#fff',
+        padding: isMobile ? '12px 0' : '0 0 16px 0',
+        marginBottom: isMobile ? 0 : 16,
+        borderBottom: isMobile ? '1px solid #f0f0f0' : 'none',
       }}>
-        <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/products')} />
-        <Title level={4} style={{ margin: 0, fontSize: isMobile ? 18 : 24 }}>
-          {isEdit ? 'Cập nhật sản phẩm' : 'Thêm sản phẩm mới'}
-        </Title>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <Button
+            icon={<ArrowLeftOutlined />}
+            onClick={() => navigate('/products')}
+            style={{ minWidth: 40, height: isMobile ? 40 : 32 }}
+          />
+          <Title level={4} style={{ margin: 0, fontSize: isMobile ? 18 : 20 }}>
+            {isEdit ? 'Sửa sản phẩm' : 'Thêm sản phẩm'}
+          </Title>
+        </div>
       </div>
 
-      <Card loading={loading} style={{ maxWidth: 900 }}>
+      <Card
+        loading={loading}
+        style={{
+          maxWidth: isMobile ? '100%' : 700,
+          border: isMobile ? 'none' : undefined,
+          boxShadow: isMobile ? 'none' : undefined,
+        }}
+        bodyStyle={{ padding: isMobile ? '16px 0' : 24 }}
+      >
         <Form
           form={form}
           layout="vertical"
@@ -85,166 +124,171 @@ const ProductForm = () => {
             retailPrice: 0,
             minStock: 10,
           }}
+          size={isMobile ? 'large' : 'middle'}
         >
           {/* Basic Info */}
-          <Title level={5} style={{ marginBottom: 16 }}>Thông tin cơ bản</Title>
+          <div style={{
+            background: isMobile ? '#f8f9fa' : 'transparent',
+            padding: isMobile ? 16 : 0,
+            borderRadius: 12,
+            marginBottom: 16,
+          }}>
+            <Title level={5} style={{ marginBottom: 16, fontSize: isMobile ? 15 : 16 }}>
+              Thông tin cơ bản
+            </Title>
 
-          <Row gutter={16}>
-            <Col xs={24} md={12}>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+              gap: isMobile ? 0 : 16
+            }}>
               <Form.Item
                 name="sku"
-                label="Mã SKU"
+                label={<span style={{ fontWeight: 500 }}>Mã SKU <span style={{ color: '#ff4d4f' }}>*</span></span>}
                 rules={[{ required: true, message: 'Vui lòng nhập mã SKU' }]}
               >
                 <Input
                   placeholder="Nhập mã SKU"
-                  size={isMobile ? 'large' : 'middle'}
+                  style={{ height: isMobile ? 48 : 40 }}
                 />
               </Form.Item>
-            </Col>
-            <Col xs={24} md={12}>
+
               <Form.Item
                 name="unit"
-                label="Đơn vị tính"
+                label={<span style={{ fontWeight: 500 }}>Đơn vị tính</span>}
               >
                 <Input
                   placeholder="VD: gói, chai, thùng..."
-                  size={isMobile ? 'large' : 'middle'}
+                  style={{ height: isMobile ? 48 : 40 }}
                 />
               </Form.Item>
-            </Col>
-          </Row>
+            </div>
 
-          <Form.Item
-            name="name"
-            label="Tên sản phẩm"
-            rules={[{ required: true, message: 'Vui lòng nhập tên sản phẩm' }]}
-          >
-            <Input
-              placeholder="Nhập tên sản phẩm"
-              size={isMobile ? 'large' : 'middle'}
-            />
-          </Form.Item>
+            <Form.Item
+              name="name"
+              label={<span style={{ fontWeight: 500 }}>Tên sản phẩm <span style={{ color: '#ff4d4f' }}>*</span></span>}
+              rules={[{ required: true, message: 'Vui lòng nhập tên sản phẩm' }]}
+            >
+              <Input
+                placeholder="Nhập tên sản phẩm"
+                style={{ height: isMobile ? 48 : 40 }}
+              />
+            </Form.Item>
+          </div>
 
           {/* Prices */}
-          <Title level={5} style={{ marginTop: 24, marginBottom: 16 }}>Bảng giá</Title>
+          <div style={{
+            background: isMobile ? '#f0f7ff' : 'transparent',
+            padding: isMobile ? 16 : 0,
+            borderRadius: 12,
+            marginBottom: 16,
+          }}>
+            <Title level={5} style={{ marginBottom: 16, fontSize: isMobile ? 15 : 16 }}>
+              Bảng giá
+            </Title>
 
-          <Row gutter={16}>
-            <Col xs={24} sm={12} md={6}>
-              <Form.Item
-                name="wholesalePrice"
-                label="Giá bán buôn"
-              >
-                <InputNumber
-                  min={0}
-                  style={{ width: '100%' }}
-                  formatter={priceFormatter}
-                  parser={priceParser}
-                  size={isMobile ? 'large' : 'middle'}
-                  addonAfter="đ"
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} sm={12} md={6}>
-              <Form.Item
-                name="mediumDealerPrice"
-                label="Giá ĐL vừa"
-              >
-                <InputNumber
-                  min={0}
-                  style={{ width: '100%' }}
-                  formatter={priceFormatter}
-                  parser={priceParser}
-                  size={isMobile ? 'large' : 'middle'}
-                  addonAfter="đ"
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} sm={12} md={6}>
-              <Form.Item
-                name="largeDealerPrice"
-                label="Giá ĐL lớn"
-              >
-                <InputNumber
-                  min={0}
-                  style={{ width: '100%' }}
-                  formatter={priceFormatter}
-                  parser={priceParser}
-                  size={isMobile ? 'large' : 'middle'}
-                  addonAfter="đ"
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} sm={12} md={6}>
-              <Form.Item
-                name="retailPrice"
-                label="Giá bán lẻ"
-              >
-                <InputNumber
-                  min={0}
-                  style={{ width: '100%' }}
-                  formatter={priceFormatter}
-                  parser={priceParser}
-                  size={isMobile ? 'large' : 'middle'}
-                  addonAfter="đ"
-                />
-              </Form.Item>
-            </Col>
-          </Row>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)',
+              gap: isMobile ? 12 : 16
+            }}>
+              <PriceField name="wholesalePrice" label="Giá bán buôn" />
+              <PriceField name="mediumDealerPrice" label="Giá ĐL vừa" />
+              <PriceField name="largeDealerPrice" label="Giá ĐL lớn" />
+              <PriceField name="retailPrice" label="Giá bán lẻ" />
+            </div>
+          </div>
 
           {/* Stock Settings */}
-          <Title level={5} style={{ marginTop: 24, marginBottom: 16 }}>Tồn kho</Title>
+          <div style={{
+            background: isMobile ? '#f6ffed' : 'transparent',
+            padding: isMobile ? 16 : 0,
+            borderRadius: 12,
+          }}>
+            <Title level={5} style={{ marginBottom: 16, fontSize: isMobile ? 15 : 16 }}>
+              Tồn kho & Trạng thái
+            </Title>
 
-          <Row gutter={16}>
-            <Col xs={24} sm={12}>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? '1fr 1fr' : '1fr 1fr 1fr',
+              gap: isMobile ? 12 : 16,
+              alignItems: 'end'
+            }}>
               <Form.Item
                 name="minStock"
-                label="Tồn kho tối thiểu"
+                label={<span style={{ fontWeight: 500, fontSize: isMobile ? 13 : 14 }}>Tồn tối thiểu</span>}
               >
                 <InputNumber
                   min={0}
-                  style={{ width: '100%' }}
-                  size={isMobile ? 'large' : 'middle'}
+                  style={{ width: '100%', height: isMobile ? 48 : 40 }}
+                  inputMode="numeric"
+                  controls={false}
                 />
               </Form.Item>
-            </Col>
-            <Col xs={24} sm={12}>
+
               <Form.Item
                 name="active"
-                label="Trạng thái"
+                label={<span style={{ fontWeight: 500, fontSize: isMobile ? 13 : 14 }}>Trạng thái</span>}
                 valuePropName="checked"
               >
-                <Switch checkedChildren="Hoạt động" unCheckedChildren="Ngừng bán" />
+                <Switch
+                  checkedChildren="Hoạt động"
+                  unCheckedChildren="Ngừng"
+                  style={{ marginTop: isMobile ? 8 : 0 }}
+                />
               </Form.Item>
-            </Col>
-          </Row>
-
-          {/* Action Buttons */}
-          <div style={{
-            display: 'flex',
-            gap: 12,
-            marginTop: 24,
-            flexDirection: isMobile ? 'column' : 'row'
-          }}>
-            <Button
-              type="primary"
-              htmlType="submit"
-              icon={<SaveOutlined />}
-              loading={saving}
-              size={isMobile ? 'large' : 'middle'}
-              style={{ flex: isMobile ? 'unset' : 1, maxWidth: isMobile ? '100%' : 200 }}
-            >
-              {isEdit ? 'Cập nhật' : 'Thêm mới'}
-            </Button>
-            <Button
-              onClick={() => navigate('/products')}
-              size={isMobile ? 'large' : 'middle'}
-            >
-              Hủy
-            </Button>
+            </div>
           </div>
         </Form>
       </Card>
+
+      {/* Fixed Footer on Mobile */}
+      {isMobile ? (
+        <div style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          padding: '12px 16px',
+          background: '#fff',
+          borderTop: '1px solid #f0f0f0',
+          boxShadow: '0 -2px 8px rgba(0,0,0,0.08)',
+          display: 'flex',
+          gap: 12,
+          zIndex: 100,
+        }}>
+          <Button
+            onClick={() => navigate('/products')}
+            style={{ flex: 1, height: 48 }}
+          >
+            Hủy
+          </Button>
+          <Button
+            type="primary"
+            icon={<SaveOutlined />}
+            loading={saving}
+            onClick={() => form.submit()}
+            style={{ flex: 2, height: 48 }}
+          >
+            {isEdit ? 'Cập nhật' : 'Thêm mới'}
+          </Button>
+        </div>
+      ) : (
+        <div style={{ marginTop: 24, display: 'flex', gap: 12 }}>
+          <Button
+            type="primary"
+            icon={<SaveOutlined />}
+            loading={saving}
+            onClick={() => form.submit()}
+          >
+            {isEdit ? 'Cập nhật' : 'Thêm mới'}
+          </Button>
+          <Button onClick={() => navigate('/products')}>
+            Hủy
+          </Button>
+        </div>
+      )}
     </div>
   )
 }

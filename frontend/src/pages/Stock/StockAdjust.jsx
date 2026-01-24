@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Card, Form, Input, InputNumber, Button, Typography, message, Grid, Tag } from 'antd'
+import { Card, Form, Input, InputNumber, Button, Typography, message, Grid } from 'antd'
 import { ArrowLeftOutlined, SaveOutlined, WarningOutlined } from '@ant-design/icons'
 import { stockAPI } from '../../services/api'
 
@@ -62,58 +62,95 @@ const StockAdjust = () => {
   const isLowStock = product && product.stock <= product.minStock
 
   return (
-    <div className="animate-fade-in">
-      {/* Header */}
+    <div className="animate-fade-in" style={{
+      paddingBottom: isMobile ? 100 : 24,
+      minHeight: isMobile ? '100vh' : 'auto'
+    }}>
+      {/* Header - Sticky on mobile */}
       <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-        marginBottom: 16
+        position: isMobile ? 'sticky' : 'relative',
+        top: isMobile ? 0 : 'auto',
+        zIndex: 10,
+        background: '#fff',
+        padding: isMobile ? '12px 0' : '0 0 16px 0',
+        marginBottom: isMobile ? 0 : 16,
+        borderBottom: isMobile ? '1px solid #f0f0f0' : 'none',
       }}>
-        <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/stock')} />
-        <Title level={4} style={{ margin: 0, fontSize: isMobile ? 18 : 24 }}>
-          Điều chỉnh tồn kho
-        </Title>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <Button
+            icon={<ArrowLeftOutlined />}
+            onClick={() => navigate('/stock')}
+            style={{ minWidth: 40, height: isMobile ? 40 : 32 }}
+          />
+          <Title level={4} style={{ margin: 0, fontSize: isMobile ? 18 : 20 }}>
+            Điều chỉnh tồn kho
+          </Title>
+        </div>
       </div>
 
-      <Card loading={loading} style={{ maxWidth: 600 }}>
+      <Card
+        loading={loading}
+        style={{
+          maxWidth: isMobile ? '100%' : 500,
+          border: isMobile ? 'none' : undefined,
+          boxShadow: isMobile ? 'none' : undefined,
+        }}
+        bodyStyle={{ padding: isMobile ? '16px 0' : 24 }}
+      >
         {product && (
           <>
-            {/* Product Info */}
+            {/* Product Info Card */}
             <div style={{
+              background: '#f8f9fa',
               padding: 16,
-              background: '#f5f7fa',
-              borderRadius: 8,
-              marginBottom: 24
+              borderRadius: 12,
+              marginBottom: 20,
             }}>
-              <div style={{ fontWeight: 600, fontSize: 16, marginBottom: 8 }}>
+              <div style={{ fontWeight: 600, fontSize: 16, marginBottom: 4 }}>
                 {product.name}
               </div>
-              <div style={{ fontSize: 13, color: '#788492', marginBottom: 12 }}>
+              <div style={{ fontSize: 13, color: '#788492' }}>
                 SKU: {product.sku} | ĐVT: {product.unit || '—'}
               </div>
+            </div>
+
+            {/* Current Stock Display */}
+            <div style={{
+              display: 'flex',
+              gap: 12,
+              marginBottom: 24,
+            }}>
               <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '12px 16px',
+                flex: 1,
+                padding: 16,
                 background: isLowStock ? '#ffedeb' : '#dcf7e9',
-                borderRadius: 8
+                borderRadius: 12,
+                textAlign: 'center',
               }}>
-                <div>
-                  <div style={{ fontSize: 12, color: '#788492' }}>Tồn kho hiện tại</div>
-                  <div style={{
-                    fontSize: 24,
-                    fontWeight: 700,
-                    color: isLowStock ? '#de350b' : '#22a06b'
-                  }}>
-                    {product.stock}
-                    {isLowStock && <WarningOutlined style={{ marginLeft: 8, fontSize: 18 }} />}
-                  </div>
+                <div style={{ fontSize: 12, color: '#788492', marginBottom: 4 }}>Tồn hiện tại</div>
+                <div style={{
+                  fontSize: 32,
+                  fontWeight: 700,
+                  color: isLowStock ? '#de350b' : '#22a06b',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                }}>
+                  {product.stock}
+                  {isLowStock && <WarningOutlined style={{ fontSize: 20 }} />}
                 </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: 12, color: '#788492' }}>Tối thiểu</div>
-                  <div style={{ fontSize: 16, fontWeight: 500 }}>{product.minStock}</div>
+              </div>
+              <div style={{
+                flex: 1,
+                padding: 16,
+                background: '#f5f5f5',
+                borderRadius: 12,
+                textAlign: 'center',
+              }}>
+                <div style={{ fontSize: 12, color: '#788492', marginBottom: 4 }}>Tồn tối thiểu</div>
+                <div style={{ fontSize: 32, fontWeight: 700, color: '#5e6c7b' }}>
+                  {product.minStock}
                 </div>
               </div>
             </div>
@@ -122,58 +159,86 @@ const StockAdjust = () => {
               form={form}
               layout="vertical"
               onFinish={handleSubmit}
+              size={isMobile ? 'large' : 'middle'}
             >
               <Form.Item
                 name="newQuantity"
-                label="Tồn kho mới"
+                label={<span style={{ fontWeight: 500, fontSize: 15 }}>Tồn kho mới <span style={{ color: '#ff4d4f' }}>*</span></span>}
                 rules={[{ required: true, message: 'Vui lòng nhập số lượng' }]}
               >
                 <InputNumber
                   min={0}
-                  style={{ width: '100%' }}
-                  size={isMobile ? 'large' : 'middle'}
+                  style={{
+                    width: '100%',
+                    height: isMobile ? 56 : 40,
+                  }}
                   placeholder="Nhập số lượng mới"
+                  inputMode="numeric"
+                  controls={false}
                 />
               </Form.Item>
 
               <Form.Item
                 name="note"
-                label="Lý do điều chỉnh"
+                label={<span style={{ fontWeight: 500 }}>Lý do điều chỉnh</span>}
               >
                 <TextArea
-                  rows={3}
-                  placeholder="VD: Kiểm kê kho, hàng hư hỏng..."
+                  rows={isMobile ? 3 : 2}
+                  placeholder="VD: Kiểm kê kho, hàng hư hỏng, sai số..."
+                  style={{ fontSize: isMobile ? 16 : 14 }}
                 />
               </Form.Item>
-
-              {/* Action Buttons */}
-              <div style={{
-                display: 'flex',
-                gap: 12,
-                marginTop: 24,
-                flexDirection: isMobile ? 'column' : 'row'
-              }}>
-                <Button
-                  type="primary"
-                  htmlType="submit"
-                  icon={<SaveOutlined />}
-                  loading={saving}
-                  size={isMobile ? 'large' : 'middle'}
-                  style={{ flex: isMobile ? 'unset' : 1, maxWidth: isMobile ? '100%' : 200 }}
-                >
-                  Điều chỉnh
-                </Button>
-                <Button
-                  onClick={() => navigate('/stock')}
-                  size={isMobile ? 'large' : 'middle'}
-                >
-                  Hủy
-                </Button>
-              </div>
             </Form>
           </>
         )}
       </Card>
+
+      {/* Fixed Footer on Mobile */}
+      {isMobile ? (
+        <div style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          padding: '12px 16px',
+          background: '#fff',
+          borderTop: '1px solid #f0f0f0',
+          boxShadow: '0 -2px 8px rgba(0,0,0,0.08)',
+          display: 'flex',
+          gap: 12,
+          zIndex: 100,
+        }}>
+          <Button
+            onClick={() => navigate('/stock')}
+            style={{ flex: 1, height: 48 }}
+          >
+            Hủy
+          </Button>
+          <Button
+            type="primary"
+            icon={<SaveOutlined />}
+            loading={saving}
+            onClick={() => form.submit()}
+            style={{ flex: 2, height: 48 }}
+          >
+            Điều chỉnh
+          </Button>
+        </div>
+      ) : (
+        <div style={{ marginTop: 24, display: 'flex', gap: 12 }}>
+          <Button
+            type="primary"
+            icon={<SaveOutlined />}
+            loading={saving}
+            onClick={() => form.submit()}
+          >
+            Điều chỉnh
+          </Button>
+          <Button onClick={() => navigate('/stock')}>
+            Hủy
+          </Button>
+        </div>
+      )}
     </div>
   )
 }
