@@ -12,7 +12,6 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   BellOutlined,
-  SettingOutlined,
   CloseOutlined,
   TeamOutlined,
 } from '@ant-design/icons'
@@ -112,8 +111,6 @@ const MainLayout = () => {
         ),
         disabled: true,
       },
-      { type: 'divider' },
-      { key: 'settings', label: 'Cài đặt', icon: <SettingOutlined /> },
       { type: 'divider' },
       { key: 'logout', label: 'Đăng xuất', icon: <LogoutOutlined />, danger: true },
     ],
