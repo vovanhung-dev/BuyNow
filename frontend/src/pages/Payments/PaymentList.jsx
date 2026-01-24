@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Table, DatePicker, Space, Typography, message, Tag, Card, Grid } from 'antd'
 import { ClockCircleOutlined, UserOutlined, FileTextOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { paymentsAPI } from '../../services/api'
+import PullToRefresh from '../../components/common/PullToRefresh'
+import LoadMoreButton from '../../components/common/LoadMoreButton'
 
 const { Title } = Typography
 const { RangePicker } = DatePicker
@@ -13,18 +15,26 @@ const PaymentList = () => {
   const isMobile = !screens.md
   const [payments, setPayments] = useState([])
   const [loading, setLoading] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [dateRange, setDateRange] = useState(null)
   const [pagination, setPagination] = useState({ current: 1, pageSize: 20, total: 0 })
 
   useEffect(() => {
-    loadPayments()
-  }, [dateRange, pagination.current])
+    setPagination(prev => ({ ...prev, current: 1 }))
+    setPayments([])
+    loadPayments(1, true)
+  }, [dateRange])
 
-  const loadPayments = async () => {
-    setLoading(true)
+  const loadPayments = useCallback(async (page = 1, reset = false) => {
+    if (reset) {
+      setLoading(true)
+    } else {
+      setLoadingMore(true)
+    }
+
     try {
       const params = {
-        page: pagination.current,
+        page,
         limit: pagination.pageSize,
       }
 
@@ -34,14 +44,37 @@ const PaymentList = () => {
       }
 
       const res = await paymentsAPI.getAll(params)
-      setPayments(res.data || [])
-      setPagination((prev) => ({ ...prev, total: res.pagination?.total || 0 }))
+      const newData = res.data || []
+
+      if (reset || page === 1) {
+        setPayments(newData)
+      } else {
+        setPayments(prev => [...prev, ...newData])
+      }
+
+      setPagination(prev => ({
+        ...prev,
+        current: page,
+        total: res.pagination?.total || 0
+      }))
     } catch (error) {
       message.error('Lỗi tải danh sách thanh toán')
     } finally {
       setLoading(false)
+      setLoadingMore(false)
     }
-  }
+  }, [dateRange, pagination.pageSize])
+
+  const handleRefresh = useCallback(async () => {
+    await loadPayments(1, true)
+  }, [loadPayments])
+
+  const handleLoadMore = useCallback(() => {
+    const nextPage = pagination.current + 1
+    loadPayments(nextPage, false)
+  }, [pagination.current, loadPayments])
+
+  const hasMore = payments.length < pagination.total
 
   const formatPrice = (val) => Number(val).toLocaleString('vi-VN') + ' đ'
 
@@ -166,20 +199,27 @@ const PaymentList = () => {
 
       {/* Content - Table or Cards */}
       {isMobile ? (
-        <div>
-          {loading ? (
-            <Card loading={true} />
-          ) : (
-            <>
-              {payments.map((payment) => (
-                <PaymentCard key={payment.id} payment={payment} />
-              ))}
-              <div style={{ textAlign: 'center', padding: '16px 0', color: '#888' }}>
-                Hiển thị {payments.length} / {pagination.total} giao dịch
-              </div>
-            </>
-          )}
-        </div>
+        <PullToRefresh onRefresh={handleRefresh} disabled={loading}>
+          <div>
+            {loading ? (
+              <Card loading={true} />
+            ) : (
+              <>
+                {payments.map((payment) => (
+                  <PaymentCard key={payment.id} payment={payment} />
+                ))}
+                <LoadMoreButton
+                  loading={loadingMore}
+                  hasMore={hasMore}
+                  onClick={handleLoadMore}
+                  current={payments.length}
+                  total={pagination.total}
+                  itemName="giao dịch"
+                />
+              </>
+            )}
+          </div>
+        </PullToRefresh>
       ) : (
         <Table
           dataSource={payments}
@@ -190,7 +230,10 @@ const PaymentList = () => {
             ...pagination,
             showSizeChanger: true,
             showTotal: (total) => `Tổng ${total} giao dịch`,
-            onChange: (page) => setPagination((prev) => ({ ...prev, current: page })),
+            onChange: (page, pageSize) => {
+              setPagination(prev => ({ ...prev, current: page, pageSize }))
+              loadPayments(page, true)
+            },
           }}
         />
       )}

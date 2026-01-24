@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Table, Button, Input, Space, message, Typography, Tag, Card, Grid, Popconfirm } from 'antd'
 import { SearchOutlined, PlusOutlined, EditOutlined, DeleteOutlined, PhoneOutlined } from '@ant-design/icons'
 import { usersAPI } from '../../services/api'
 import { useAuthStore } from '../../store'
+import PullToRefresh from '../../components/common/PullToRefresh'
+import LoadMoreButton from '../../components/common/LoadMoreButton'
 
 const { Title } = Typography
 const { useBreakpoint } = Grid
@@ -20,24 +22,62 @@ const UserList = () => {
   const isMobile = !screens.md
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [search, setSearch] = useState('')
+  const [pagination, setPagination] = useState({ current: 1, pageSize: 20, total: 0 })
   const currentUser = useAuthStore((state) => state.user)
 
   useEffect(() => {
-    loadUsers()
+    setPagination(prev => ({ ...prev, current: 1 }))
+    setUsers([])
+    loadUsers(1, true)
   }, [search])
 
-  const loadUsers = async () => {
-    setLoading(true)
+  const loadUsers = useCallback(async (page = 1, reset = false) => {
+    if (reset) {
+      setLoading(true)
+    } else {
+      setLoadingMore(true)
+    }
+
     try {
-      const res = await usersAPI.getAll({ search })
-      setUsers(res.data || [])
+      const res = await usersAPI.getAll({
+        search,
+        page,
+        limit: pagination.pageSize,
+      })
+
+      const newData = res.data || []
+
+      if (reset || page === 1) {
+        setUsers(newData)
+      } else {
+        setUsers(prev => [...prev, ...newData])
+      }
+
+      setPagination(prev => ({
+        ...prev,
+        current: page,
+        total: res.pagination?.total || 0
+      }))
     } catch (error) {
       message.error('Lỗi tải danh sách tài khoản')
     } finally {
       setLoading(false)
+      setLoadingMore(false)
     }
-  }
+  }, [search, pagination.pageSize])
+
+  const handleRefresh = useCallback(async () => {
+    await loadUsers(1, true)
+  }, [loadUsers])
+
+  const handleLoadMore = useCallback(() => {
+    const nextPage = pagination.current + 1
+    loadUsers(nextPage, false)
+  }, [pagination.current, loadUsers])
+
+  const hasMore = users.length < pagination.total
 
   const handleEdit = (record) => {
     navigate(`/users/${record.id}/edit`)
@@ -47,7 +87,7 @@ const UserList = () => {
     try {
       await usersAPI.delete(id)
       message.success('Xóa tài khoản thành công')
-      loadUsers()
+      loadUsers(1, true)
     } catch (error) {
       message.error(error.message || 'Lỗi xóa tài khoản')
     }
@@ -264,27 +304,42 @@ const UserList = () => {
 
       {/* Content - Table or Cards */}
       {isMobile ? (
-        <div>
-          {loading ? (
-            <Card loading={true} />
-          ) : (
-            <>
-              {users.map((user) => (
-                <UserCard key={user.id} user={user} />
-              ))}
-              <div style={{ textAlign: 'center', padding: '16px 0', color: '#888' }}>
-                Hiển thị {users.length} tài khoản
-              </div>
-            </>
-          )}
-        </div>
+        <PullToRefresh onRefresh={handleRefresh} disabled={loading}>
+          <div>
+            {loading ? (
+              <Card loading={true} />
+            ) : (
+              <>
+                {users.map((user) => (
+                  <UserCard key={user.id} user={user} />
+                ))}
+                <LoadMoreButton
+                  loading={loadingMore}
+                  hasMore={hasMore}
+                  onClick={handleLoadMore}
+                  current={users.length}
+                  total={pagination.total}
+                  itemName="tài khoản"
+                />
+              </>
+            )}
+          </div>
+        </PullToRefresh>
       ) : (
         <Table
           dataSource={users}
           columns={columns}
           rowKey="id"
           loading={loading}
-          pagination={{ pageSize: 20, showTotal: (total) => `Tổng ${total} tài khoản` }}
+          pagination={{
+            ...pagination,
+            showSizeChanger: true,
+            showTotal: (total) => `Tổng ${total} tài khoản`,
+            onChange: (page, pageSize) => {
+              setPagination(prev => ({ ...prev, current: page, pageSize }))
+              loadUsers(page, true)
+            },
+          }}
         />
       )}
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Table, Button, Input, Space, Modal, message, Tag, Popconfirm, Row, Col, Card, Tooltip, Grid, Descriptions
@@ -13,6 +13,8 @@ import {
   EnvironmentOutlined,
 } from '@ant-design/icons'
 import { customersAPI, customerGroupsAPI } from '../../services/api'
+import PullToRefresh from '../../components/common/PullToRefresh'
+import LoadMoreButton from '../../components/common/LoadMoreButton'
 
 const { useBreakpoint } = Grid
 
@@ -21,6 +23,7 @@ const CustomerList = () => {
   const [customers, setCustomers] = useState([])
   const [groups, setGroups] = useState([])
   const [loading, setLoading] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [viewModalOpen, setViewModalOpen] = useState(false)
   const [viewingCustomer, setViewingCustomer] = useState(null)
   const [search, setSearch] = useState('')
@@ -34,8 +37,11 @@ const CustomerList = () => {
   }, [])
 
   useEffect(() => {
-    loadCustomers()
-  }, [search, pagination.current])
+    // Reset to page 1 when search changes
+    setPagination(prev => ({ ...prev, current: 1 }))
+    setCustomers([])
+    loadCustomers(1, true)
+  }, [search])
 
   const loadGroups = async () => {
     try {
@@ -46,22 +52,51 @@ const CustomerList = () => {
     }
   }
 
-  const loadCustomers = async () => {
-    setLoading(true)
+  const loadCustomers = useCallback(async (page = 1, reset = false) => {
+    if (reset) {
+      setLoading(true)
+    } else {
+      setLoadingMore(true)
+    }
+
     try {
       const res = await customersAPI.getAll({
         search,
-        page: pagination.current,
+        page,
         limit: pagination.pageSize,
       })
-      setCustomers(res.data || [])
-      setPagination((prev) => ({ ...prev, total: res.pagination?.total || 0 }))
+
+      const newData = res.data || []
+
+      if (reset || page === 1) {
+        setCustomers(newData)
+      } else {
+        setCustomers(prev => [...prev, ...newData])
+      }
+
+      setPagination(prev => ({
+        ...prev,
+        current: page,
+        total: res.pagination?.total || 0
+      }))
     } catch (error) {
       message.error('Lỗi tải danh sách khách hàng')
     } finally {
       setLoading(false)
+      setLoadingMore(false)
     }
-  }
+  }, [search, pagination.pageSize])
+
+  const handleRefresh = useCallback(async () => {
+    await loadCustomers(1, true)
+  }, [loadCustomers])
+
+  const handleLoadMore = useCallback(() => {
+    const nextPage = pagination.current + 1
+    loadCustomers(nextPage, false)
+  }, [pagination.current, loadCustomers])
+
+  const hasMore = customers.length < pagination.total
 
   const handleCreate = () => {
     navigate('/customers/create')
@@ -80,7 +115,7 @@ const CustomerList = () => {
     try {
       await customersAPI.delete(id)
       message.success('Xóa khách hàng thành công')
-      loadCustomers()
+      loadCustomers(1, true)
     } catch (error) {
       message.error(error.message || 'Lỗi xóa khách hàng')
     }
@@ -341,20 +376,27 @@ const CustomerList = () => {
 
       {/* Data - Table or Cards */}
       {isMobile ? (
-        <div>
-          {loading ? (
-            <Card loading={true} />
-          ) : (
-            <>
-              {customers.map((customer) => (
-                <CustomerCard key={customer.id} customer={customer} />
-              ))}
-              <div style={{ textAlign: 'center', padding: '16px 0', color: '#888' }}>
-                Hiển thị {customers.length} / {pagination.total} khách hàng
-              </div>
-            </>
-          )}
-        </div>
+        <PullToRefresh onRefresh={handleRefresh} disabled={loading}>
+          <div>
+            {loading ? (
+              <Card loading={true} />
+            ) : (
+              <>
+                {customers.map((customer) => (
+                  <CustomerCard key={customer.id} customer={customer} />
+                ))}
+                <LoadMoreButton
+                  loading={loadingMore}
+                  hasMore={hasMore}
+                  onClick={handleLoadMore}
+                  current={customers.length}
+                  total={pagination.total}
+                  itemName="khách hàng"
+                />
+              </>
+            )}
+          </div>
+        </PullToRefresh>
       ) : (
         <Table
           dataSource={customers}
@@ -369,11 +411,10 @@ const CustomerList = () => {
                 Hiển thị {range[0]}-{range[1]} / {total} khách hàng
               </span>
             ),
-            onChange: (page, pageSize) => setPagination((prev) => ({
-              ...prev,
-              current: page,
-              pageSize,
-            })),
+            onChange: (page, pageSize) => {
+              setPagination(prev => ({ ...prev, current: page, pageSize }))
+              loadCustomers(page, true)
+            },
           }}
         />
       )}

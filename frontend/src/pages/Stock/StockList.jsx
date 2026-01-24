@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Table, Button, Input, Space, message, Typography, Tag, Card, Grid } from 'antd'
 import { SearchOutlined, PlusOutlined, WarningOutlined, EditOutlined } from '@ant-design/icons'
 import { stockAPI } from '../../services/api'
+import PullToRefresh from '../../components/common/PullToRefresh'
+import LoadMoreButton from '../../components/common/LoadMoreButton'
 
 const { Title } = Typography
 const { useBreakpoint } = Grid
@@ -13,24 +15,63 @@ const StockList = () => {
   const isMobile = !screens.md
   const [stock, setStock] = useState([])
   const [loading, setLoading] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [search, setSearch] = useState('')
   const [showLowStock, setShowLowStock] = useState(false)
+  const [pagination, setPagination] = useState({ current: 1, pageSize: 20, total: 0 })
 
   useEffect(() => {
-    loadStock()
+    setPagination(prev => ({ ...prev, current: 1 }))
+    setStock([])
+    loadStock(1, true)
   }, [search, showLowStock])
 
-  const loadStock = async () => {
-    setLoading(true)
+  const loadStock = useCallback(async (page = 1, reset = false) => {
+    if (reset) {
+      setLoading(true)
+    } else {
+      setLoadingMore(true)
+    }
+
     try {
-      const res = await stockAPI.getStock({ search, lowStock: showLowStock ? 'true' : undefined })
-      setStock(res.data || [])
+      const res = await stockAPI.getStock({
+        search,
+        lowStock: showLowStock ? 'true' : undefined,
+        page,
+        limit: pagination.pageSize,
+      })
+
+      const newData = res.data || []
+
+      if (reset || page === 1) {
+        setStock(newData)
+      } else {
+        setStock(prev => [...prev, ...newData])
+      }
+
+      setPagination(prev => ({
+        ...prev,
+        current: page,
+        total: res.pagination?.total || 0
+      }))
     } catch (error) {
       message.error('Lỗi tải tồn kho')
     } finally {
       setLoading(false)
+      setLoadingMore(false)
     }
-  }
+  }, [search, showLowStock, pagination.pageSize])
+
+  const handleRefresh = useCallback(async () => {
+    await loadStock(1, true)
+  }, [loadStock])
+
+  const handleLoadMore = useCallback(() => {
+    const nextPage = pagination.current + 1
+    loadStock(nextPage, false)
+  }, [pagination.current, loadStock])
+
+  const hasMore = stock.length < pagination.total
 
   const handleImport = () => {
     navigate('/stock/import')
@@ -187,27 +228,42 @@ const StockList = () => {
 
       {/* Content - Table or Cards */}
       {isMobile ? (
-        <div>
-          {loading ? (
-            <Card loading={true} />
-          ) : (
-            <>
-              {stock.map((item) => (
-                <StockCard key={item.id} item={item} />
-              ))}
-              <div style={{ textAlign: 'center', padding: '16px 0', color: '#888' }}>
-                Hiển thị {stock.length} sản phẩm
-              </div>
-            </>
-          )}
-        </div>
+        <PullToRefresh onRefresh={handleRefresh} disabled={loading}>
+          <div>
+            {loading ? (
+              <Card loading={true} />
+            ) : (
+              <>
+                {stock.map((item) => (
+                  <StockCard key={item.id} item={item} />
+                ))}
+                <LoadMoreButton
+                  loading={loadingMore}
+                  hasMore={hasMore}
+                  onClick={handleLoadMore}
+                  current={stock.length}
+                  total={pagination.total}
+                  itemName="sản phẩm"
+                />
+              </>
+            )}
+          </div>
+        </PullToRefresh>
       ) : (
         <Table
           dataSource={stock}
           columns={columns}
           rowKey="id"
           loading={loading}
-          pagination={{ pageSize: 20, showTotal: (total) => `Tổng ${total} sản phẩm` }}
+          pagination={{
+            ...pagination,
+            showSizeChanger: true,
+            showTotal: (total) => `Tổng ${total} sản phẩm`,
+            onChange: (page, pageSize) => {
+              setPagination(prev => ({ ...prev, current: page, pageSize }))
+              loadStock(page, true)
+            },
+          }}
         />
       )}
 

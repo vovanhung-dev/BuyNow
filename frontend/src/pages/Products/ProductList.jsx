@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Table, Button, Input, Space, Modal, message,
@@ -9,6 +9,8 @@ import {
   WarningOutlined, EyeOutlined
 } from '@ant-design/icons'
 import { productsAPI } from '../../services/api'
+import PullToRefresh from '../../components/common/PullToRefresh'
+import LoadMoreButton from '../../components/common/LoadMoreButton'
 
 const { Title } = Typography
 const { useBreakpoint } = Grid
@@ -17,6 +19,7 @@ const ProductList = () => {
   const navigate = useNavigate()
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [viewModalOpen, setViewModalOpen] = useState(false)
   const [viewingProduct, setViewingProduct] = useState(null)
   const [search, setSearch] = useState('')
@@ -26,25 +29,56 @@ const ProductList = () => {
   const isMobile = !screens.md
 
   useEffect(() => {
-    loadProducts()
-  }, [search, pagination.current])
+    setPagination(prev => ({ ...prev, current: 1 }))
+    setProducts([])
+    loadProducts(1, true)
+  }, [search])
 
-  const loadProducts = async () => {
-    setLoading(true)
+  const loadProducts = useCallback(async (page = 1, reset = false) => {
+    if (reset) {
+      setLoading(true)
+    } else {
+      setLoadingMore(true)
+    }
+
     try {
       const res = await productsAPI.getAll({
         search,
-        page: pagination.current,
+        page,
         limit: pagination.pageSize,
       })
-      setProducts(res.data || [])
-      setPagination((prev) => ({ ...prev, total: res.pagination?.total || 0 }))
+
+      const newData = res.data || []
+
+      if (reset || page === 1) {
+        setProducts(newData)
+      } else {
+        setProducts(prev => [...prev, ...newData])
+      }
+
+      setPagination(prev => ({
+        ...prev,
+        current: page,
+        total: res.pagination?.total || 0
+      }))
     } catch (error) {
       message.error('Lỗi tải danh sách sản phẩm')
     } finally {
       setLoading(false)
+      setLoadingMore(false)
     }
-  }
+  }, [search, pagination.pageSize])
+
+  const handleRefresh = useCallback(async () => {
+    await loadProducts(1, true)
+  }, [loadProducts])
+
+  const handleLoadMore = useCallback(() => {
+    const nextPage = pagination.current + 1
+    loadProducts(nextPage, false)
+  }, [pagination.current, loadProducts])
+
+  const hasMore = products.length < pagination.total
 
   const handleCreate = () => {
     navigate('/products/create')
@@ -63,7 +97,7 @@ const ProductList = () => {
     try {
       await productsAPI.delete(id)
       message.success('Xóa sản phẩm thành công')
-      loadProducts()
+      loadProducts(1, true)
     } catch (error) {
       message.error(error.message || 'Lỗi xóa sản phẩm')
     }
@@ -224,20 +258,27 @@ const ProductList = () => {
 
       {/* Content - Table or Cards */}
       {isMobile ? (
-        <div>
-          {loading ? (
-            <Card loading={true} />
-          ) : (
-            <>
-              {products.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-              <div style={{ textAlign: 'center', padding: '16px 0', color: '#888' }}>
-                Hiển thị {products.length} / {pagination.total} sản phẩm
-              </div>
-            </>
-          )}
-        </div>
+        <PullToRefresh onRefresh={handleRefresh} disabled={loading}>
+          <div>
+            {loading ? (
+              <Card loading={true} />
+            ) : (
+              <>
+                {products.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+                <LoadMoreButton
+                  loading={loadingMore}
+                  hasMore={hasMore}
+                  onClick={handleLoadMore}
+                  current={products.length}
+                  total={pagination.total}
+                  itemName="sản phẩm"
+                />
+              </>
+            )}
+          </div>
+        </PullToRefresh>
       ) : (
         <Table
           dataSource={products}
@@ -248,7 +289,10 @@ const ProductList = () => {
             ...pagination,
             showSizeChanger: true,
             showTotal: (total) => `Tổng ${total} sản phẩm`,
-            onChange: (page) => setPagination((prev) => ({ ...prev, current: page })),
+            onChange: (page, pageSize) => {
+              setPagination(prev => ({ ...prev, current: page, pageSize }))
+              loadProducts(page, true)
+            },
           }}
           scroll={{ x: 1200 }}
         />

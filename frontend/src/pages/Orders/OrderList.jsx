@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Table, Button, Input, Space, Select, DatePicker, Tag, Typography, message, Card, Grid } from 'antd'
 import { PlusOutlined, SearchOutlined, EyeOutlined, ClockCircleOutlined, UserOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { ordersAPI } from '../../services/api'
+import PullToRefresh from '../../components/common/PullToRefresh'
+import LoadMoreButton from '../../components/common/LoadMoreButton'
 
 const { Title } = Typography
 const { RangePicker } = DatePicker
@@ -22,22 +24,30 @@ const OrderList = () => {
   const isMobile = !screens.md
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState(null)
   const [dateRange, setDateRange] = useState(null)
   const [pagination, setPagination] = useState({ current: 1, pageSize: 20, total: 0 })
 
   useEffect(() => {
-    loadOrders()
-  }, [search, status, dateRange, pagination.current])
+    setPagination(prev => ({ ...prev, current: 1 }))
+    setOrders([])
+    loadOrders(1, true)
+  }, [search, status, dateRange])
 
-  const loadOrders = async () => {
-    setLoading(true)
+  const loadOrders = useCallback(async (page = 1, reset = false) => {
+    if (reset) {
+      setLoading(true)
+    } else {
+      setLoadingMore(true)
+    }
+
     try {
       const params = {
         search,
         status,
-        page: pagination.current,
+        page,
         limit: pagination.pageSize,
       }
 
@@ -47,14 +57,37 @@ const OrderList = () => {
       }
 
       const res = await ordersAPI.getAll(params)
-      setOrders(res.data || [])
-      setPagination((prev) => ({ ...prev, total: res.pagination?.total || 0 }))
+      const newData = res.data || []
+
+      if (reset || page === 1) {
+        setOrders(newData)
+      } else {
+        setOrders(prev => [...prev, ...newData])
+      }
+
+      setPagination(prev => ({
+        ...prev,
+        current: page,
+        total: res.pagination?.total || 0
+      }))
     } catch (error) {
       message.error('Lỗi tải danh sách đơn hàng')
     } finally {
       setLoading(false)
+      setLoadingMore(false)
     }
-  }
+  }, [search, status, dateRange, pagination.pageSize])
+
+  const handleRefresh = useCallback(async () => {
+    await loadOrders(1, true)
+  }, [loadOrders])
+
+  const handleLoadMore = useCallback(() => {
+    const nextPage = pagination.current + 1
+    loadOrders(nextPage, false)
+  }, [pagination.current, loadOrders])
+
+  const hasMore = orders.length < pagination.total
 
   const formatPrice = (val) => Number(val).toLocaleString('vi-VN') + ' đ'
 
@@ -207,20 +240,27 @@ const OrderList = () => {
 
       {/* Content - Table or Cards */}
       {isMobile ? (
-        <div>
-          {loading ? (
-            <Card loading={true} />
-          ) : (
-            <>
-              {orders.map((order) => (
-                <OrderCard key={order.id} order={order} />
-              ))}
-              <div style={{ textAlign: 'center', padding: '16px 0', color: '#888' }}>
-                Hiển thị {orders.length} / {pagination.total} đơn hàng
-              </div>
-            </>
-          )}
-        </div>
+        <PullToRefresh onRefresh={handleRefresh} disabled={loading}>
+          <div>
+            {loading ? (
+              <Card loading={true} />
+            ) : (
+              <>
+                {orders.map((order) => (
+                  <OrderCard key={order.id} order={order} />
+                ))}
+                <LoadMoreButton
+                  loading={loadingMore}
+                  hasMore={hasMore}
+                  onClick={handleLoadMore}
+                  current={orders.length}
+                  total={pagination.total}
+                  itemName="đơn hàng"
+                />
+              </>
+            )}
+          </div>
+        </PullToRefresh>
       ) : (
         <Table
           dataSource={orders}
@@ -231,7 +271,10 @@ const OrderList = () => {
             ...pagination,
             showSizeChanger: true,
             showTotal: (total) => `Tổng ${total} đơn hàng`,
-            onChange: (page) => setPagination((prev) => ({ ...prev, current: page })),
+            onChange: (page, pageSize) => {
+              setPagination(prev => ({ ...prev, current: page, pageSize }))
+              loadOrders(page, true)
+            },
           }}
         />
       )}
