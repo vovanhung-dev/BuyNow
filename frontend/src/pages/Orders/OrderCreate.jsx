@@ -21,8 +21,28 @@ const { useBreakpoint } = Grid
 
 const formatPrice = (val) => Number(val).toLocaleString('vi-VN') + ' đ'
 
+// Controlled InputNumber that syncs on blur to avoid mobile issues
+const PriceInput = ({ value, onChange, ...props }) => {
+  const [localValue, setLocalValue] = useState(value)
+
+  useEffect(() => {
+    setLocalValue(value)
+  }, [value])
+
+  return (
+    <InputNumber
+      {...props}
+      value={localValue}
+      onChange={(v) => {
+        setLocalValue(v)
+        onChange(v)
+      }}
+    />
+  )
+}
+
 // Mobile Order Item Card - định nghĩa bên ngoài để tránh re-create component
-const OrderItemCard = memo(({ item, index, onQuantityChange, onPriceChange, onNoteChange, onRemove }) => (
+const OrderItemCard = ({ item, index, onQuantityChange, onPriceChange, onNoteChange, onRemove }) => (
   <div style={{
     padding: '12px 0',
     borderBottom: '1px solid #f0f0f0',
@@ -45,7 +65,7 @@ const OrderItemCard = memo(({ item, index, onQuantityChange, onPriceChange, onNo
     <div style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <span style={{ fontSize: 12, color: '#788492' }}>SL:</span>
-        <InputNumber
+        <PriceInput
           min={1}
           value={item.quantity}
           onChange={(v) => onQuantityChange(index, v)}
@@ -56,7 +76,7 @@ const OrderItemCard = memo(({ item, index, onQuantityChange, onPriceChange, onNo
       <div style={{ textAlign: 'right' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <span style={{ fontSize: 12, color: '#788492' }}>Giá:</span>
-          <InputNumber
+          <PriceInput
             min={0}
             value={item.unitPrice}
             onChange={(v) => onPriceChange(index, v)}
@@ -78,9 +98,7 @@ const OrderItemCard = memo(({ item, index, onQuantityChange, onPriceChange, onNo
       />
     </div>
   </div>
-))
-
-OrderItemCard.displayName = 'OrderItemCard'
+)
 
 const OrderCreate = () => {
   const screens = useBreakpoint()
@@ -178,29 +196,29 @@ const OrderCreate = () => {
   }
 
   const handleQuantityChange = useCallback((index, quantity) => {
-    setOrderItems(prev => {
-      const newItems = [...prev]
-      newItems[index].quantity = quantity
-      newItems[index].total = quantity * newItems[index].unitPrice
-      return newItems
-    })
+    const qty = quantity || 1
+    setOrderItems(prev => prev.map((item, i) =>
+      i === index
+        ? { ...item, quantity: qty, total: qty * item.unitPrice }
+        : item
+    ))
   }, [])
 
   const handlePriceChange = useCallback((index, price) => {
-    setOrderItems(prev => {
-      const newItems = [...prev]
-      newItems[index].unitPrice = price
-      newItems[index].total = price * newItems[index].quantity
-      return newItems
-    })
+    const p = price ?? 0
+    setOrderItems(prev => prev.map((item, i) =>
+      i === index
+        ? { ...item, unitPrice: p, total: p * item.quantity }
+        : item
+    ))
   }, [])
 
   const handleNoteChange = useCallback((index, note) => {
-    setOrderItems(prev => {
-      const newItems = [...prev]
-      newItems[index].note = note
-      return newItems
-    })
+    setOrderItems(prev => prev.map((item, i) =>
+      i === index
+        ? { ...item, note }
+        : item
+    ))
   }, [])
 
   const handleRemoveItem = useCallback((index) => {
