@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, memo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Form, Select, DatePicker, InputNumber, Input, Button, Table, Card, Space, message, Divider, Row, Col, Tag, Grid
@@ -18,6 +18,69 @@ import dayjs from 'dayjs'
 import { customersAPI, productsAPI, ordersAPI } from '../../services/api'
 
 const { useBreakpoint } = Grid
+
+const formatPrice = (val) => Number(val).toLocaleString('vi-VN') + ' đ'
+
+// Mobile Order Item Card - định nghĩa bên ngoài để tránh re-create component
+const OrderItemCard = memo(({ item, index, onQuantityChange, onPriceChange, onNoteChange, onRemove }) => (
+  <div style={{
+    padding: '12px 0',
+    borderBottom: '1px solid #f0f0f0',
+  }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontWeight: 500, color: '#2d3640' }}>{item.name}</div>
+        <div style={{ fontSize: 12, color: '#788492', marginTop: 2 }}>
+          SKU: {item.sku} | {item.unit || '—'}
+        </div>
+      </div>
+      <Button
+        type="text"
+        size="small"
+        danger
+        icon={<DeleteOutlined />}
+        onClick={() => onRemove(index)}
+      />
+    </div>
+    <div style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ fontSize: 12, color: '#788492' }}>SL:</span>
+        <InputNumber
+          min={1}
+          value={item.quantity}
+          onChange={(v) => onQuantityChange(index, v)}
+          size="small"
+          style={{ width: 60 }}
+        />
+      </div>
+      <div style={{ textAlign: 'right' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{ fontSize: 12, color: '#788492' }}>Giá:</span>
+          <InputNumber
+            min={0}
+            value={item.unitPrice}
+            onChange={(v) => onPriceChange(index, v)}
+            size="small"
+            formatter={(v) => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+            parser={(v) => v.replace(/\,/g, '')}
+            style={{ width: 100 }}
+          />
+        </div>
+        <div style={{ fontWeight: 600, color: '#2a9299', marginTop: 4 }}>{formatPrice(item.total)}</div>
+      </div>
+    </div>
+    <div style={{ marginTop: 8 }}>
+      <Input
+        placeholder="Ghi chú sản phẩm..."
+        value={item.note}
+        onChange={(e) => onNoteChange(index, e.target.value)}
+        size="small"
+      />
+    </div>
+  </div>
+))
+
+OrderItemCard.displayName = 'OrderItemCard'
 
 const OrderCreate = () => {
   const screens = useBreakpoint()
@@ -114,29 +177,35 @@ const OrderCreate = () => {
     ])
   }
 
-  const handleQuantityChange = (index, quantity) => {
-    const newItems = [...orderItems]
-    newItems[index].quantity = quantity
-    newItems[index].total = quantity * newItems[index].unitPrice
-    setOrderItems(newItems)
-  }
+  const handleQuantityChange = useCallback((index, quantity) => {
+    setOrderItems(prev => {
+      const newItems = [...prev]
+      newItems[index].quantity = quantity
+      newItems[index].total = quantity * newItems[index].unitPrice
+      return newItems
+    })
+  }, [])
 
-  const handlePriceChange = (index, price) => {
-    const newItems = [...orderItems]
-    newItems[index].unitPrice = price
-    newItems[index].total = price * newItems[index].quantity
-    setOrderItems(newItems)
-  }
+  const handlePriceChange = useCallback((index, price) => {
+    setOrderItems(prev => {
+      const newItems = [...prev]
+      newItems[index].unitPrice = price
+      newItems[index].total = price * newItems[index].quantity
+      return newItems
+    })
+  }, [])
 
-  const handleNoteChange = (index, note) => {
-    const newItems = [...orderItems]
-    newItems[index].note = note
-    setOrderItems(newItems)
-  }
+  const handleNoteChange = useCallback((index, note) => {
+    setOrderItems(prev => {
+      const newItems = [...prev]
+      newItems[index].note = note
+      return newItems
+    })
+  }, [])
 
-  const handleRemoveItem = (index) => {
-    setOrderItems(orderItems.filter((_, i) => i !== index))
-  }
+  const handleRemoveItem = useCallback((index) => {
+    setOrderItems(prev => prev.filter((_, i) => i !== index))
+  }, [])
 
   const calculateTotals = () => {
     const subtotal = orderItems.reduce((sum, item) => sum + item.total, 0)
@@ -185,66 +254,6 @@ const OrderCreate = () => {
   }
 
   const totals = calculateTotals()
-  const formatPrice = (val) => Number(val).toLocaleString('vi-VN') + ' đ'
-
-  // Mobile Order Item Card
-  const OrderItemCard = ({ item, index }) => (
-    <div style={{
-      padding: '12px 0',
-      borderBottom: '1px solid #f0f0f0',
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 500, color: '#2d3640' }}>{item.name}</div>
-          <div style={{ fontSize: 12, color: '#788492', marginTop: 2 }}>
-            SKU: {item.sku} | {item.unit || '—'}
-          </div>
-        </div>
-        <Button
-          type="text"
-          size="small"
-          danger
-          icon={<DeleteOutlined />}
-          onClick={() => handleRemoveItem(index)}
-        />
-      </div>
-      <div style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 12, color: '#788492' }}>SL:</span>
-          <InputNumber
-            min={1}
-            value={item.quantity}
-            onChange={(v) => handleQuantityChange(index, v)}
-            size="small"
-            style={{ width: 60 }}
-          />
-        </div>
-        <div style={{ textAlign: 'right' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span style={{ fontSize: 12, color: '#788492' }}>Giá:</span>
-            <InputNumber
-              min={0}
-              value={item.unitPrice}
-              onChange={(v) => handlePriceChange(index, v)}
-              size="small"
-              formatter={(v) => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-              parser={(v) => v.replace(/\,/g, '')}
-              style={{ width: 100 }}
-            />
-          </div>
-          <div style={{ fontWeight: 600, color: '#2a9299', marginTop: 4 }}>{formatPrice(item.total)}</div>
-        </div>
-      </div>
-      <div style={{ marginTop: 8 }}>
-        <Input
-          placeholder="Ghi chú sản phẩm..."
-          value={item.note}
-          onChange={(e) => handleNoteChange(index, e.target.value)}
-          size="small"
-        />
-      </div>
-    </div>
-  )
 
   const columns = [
     {
@@ -573,7 +582,15 @@ const OrderCreate = () => {
             ) : isMobile ? (
               <div>
                 {orderItems.map((item, index) => (
-                  <OrderItemCard key={item.productId} item={item} index={index} />
+                  <OrderItemCard
+                    key={item.productId}
+                    item={item}
+                    index={index}
+                    onQuantityChange={handleQuantityChange}
+                    onPriceChange={handlePriceChange}
+                    onNoteChange={handleNoteChange}
+                    onRemove={handleRemoveItem}
+                  />
                 ))}
               </div>
             ) : (
