@@ -21,7 +21,7 @@ const { useBreakpoint } = Grid
 
 const formatPrice = (val) => Number(val).toLocaleString('vi-VN') + ' đ'
 
-// Controlled InputNumber that syncs on blur to avoid mobile issues
+// Controlled InputNumber that syncs properly to avoid mobile issues
 const PriceInput = ({ value, onChange, ...props }) => {
   const [localValue, setLocalValue] = useState(value)
 
@@ -41,62 +41,84 @@ const PriceInput = ({ value, onChange, ...props }) => {
   )
 }
 
-// Mobile Order Item Card - định nghĩa bên ngoài để tránh re-create component
+// Mobile Order Item Card - optimized for touch
 const OrderItemCard = ({ item, index, onQuantityChange, onPriceChange, onNoteChange, onRemove }) => (
   <div style={{
-    padding: '12px 0',
-    borderBottom: '1px solid #f0f0f0',
+    padding: '16px',
+    marginBottom: 12,
+    background: '#fafbfc',
+    borderRadius: 12,
+    border: '1px solid #e8ecf0',
   }}>
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-      <div style={{ flex: 1 }}>
-        <div style={{ fontWeight: 500, color: '#2d3640' }}>{item.name}</div>
-        <div style={{ fontSize: 12, color: '#788492', marginTop: 2 }}>
-          SKU: {item.sku} | {item.unit || '—'}
+    {/* Header: Name + Delete */}
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+      <div style={{ flex: 1, paddingRight: 8 }}>
+        <div style={{ fontWeight: 600, color: '#2d3640', fontSize: 15, lineHeight: 1.3 }}>
+          {item.name}
+        </div>
+        <div style={{ fontSize: 12, color: '#788492', marginTop: 4 }}>
+          SKU: {item.sku} • {item.unit || '—'}
         </div>
       </div>
       <Button
         type="text"
-        size="small"
         danger
         icon={<DeleteOutlined />}
         onClick={() => onRemove(index)}
+        style={{ marginTop: -4, marginRight: -8 }}
       />
     </div>
-    <div style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ fontSize: 12, color: '#788492' }}>SL:</span>
+
+    {/* Quantity & Price Row */}
+    <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
+      {/* Quantity */}
+      <div style={{ flex: 1 }}>
+        <div style={{ fontSize: 12, color: '#788492', marginBottom: 6 }}>Số lượng</div>
         <PriceInput
           min={1}
           value={item.quantity}
           onChange={(v) => onQuantityChange(index, v)}
-          size="small"
-          style={{ width: 60 }}
+          style={{ width: '100%', height: 44 }}
+          size="large"
         />
       </div>
-      <div style={{ textAlign: 'right' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <span style={{ fontSize: 12, color: '#788492' }}>Giá:</span>
-          <PriceInput
-            min={0}
-            value={item.unitPrice}
-            onChange={(v) => onPriceChange(index, v)}
-            size="small"
-            formatter={(v) => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-            parser={(v) => v.replace(/\,/g, '')}
-            style={{ width: 100 }}
-          />
-        </div>
-        <div style={{ fontWeight: 600, color: '#2a9299', marginTop: 4 }}>{formatPrice(item.total)}</div>
+      {/* Unit Price */}
+      <div style={{ flex: 2 }}>
+        <div style={{ fontSize: 12, color: '#788492', marginBottom: 6 }}>Đơn giá</div>
+        <PriceInput
+          min={0}
+          value={item.unitPrice}
+          onChange={(v) => onPriceChange(index, v)}
+          formatter={(v) => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+          parser={(v) => v.replace(/\,/g, '')}
+          style={{ width: '100%', height: 44 }}
+          size="large"
+          addonAfter="đ"
+        />
       </div>
     </div>
-    <div style={{ marginTop: 8 }}>
-      <Input
-        placeholder="Ghi chú sản phẩm..."
-        value={item.note}
-        onChange={(e) => onNoteChange(index, e.target.value)}
-        size="small"
-      />
+
+    {/* Total */}
+    <div style={{
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: '10px 12px',
+      background: '#e6f7f8',
+      borderRadius: 8,
+      marginBottom: 12,
+    }}>
+      <span style={{ color: '#134e52', fontWeight: 500 }}>Thành tiền</span>
+      <span style={{ fontWeight: 700, color: '#2a9299', fontSize: 16 }}>{formatPrice(item.total)}</span>
     </div>
+
+    {/* Note */}
+    <Input
+      placeholder="Ghi chú sản phẩm (nếu có)..."
+      value={item.note}
+      onChange={(e) => onNoteChange(index, e.target.value)}
+      style={{ height: 40 }}
+    />
   </div>
 )
 
@@ -402,13 +424,12 @@ const OrderCreate = () => {
   ]
 
   return (
-    <div className="animate-fade-in order-form">
+    <div className="animate-fade-in order-form" style={{ paddingBottom: isMobile ? 140 : 0 }}>
       {/* Page Header */}
       <div style={{
         display: 'flex',
-        flexDirection: isMobile ? 'column' : 'row',
         justifyContent: 'space-between',
-        alignItems: isMobile ? 'stretch' : 'center',
+        alignItems: 'center',
         gap: 12,
         marginBottom: 16
       }}>
@@ -416,9 +437,10 @@ const OrderCreate = () => {
           <Button
             icon={<ArrowLeftOutlined />}
             onClick={() => navigate('/orders')}
-            size={isMobile ? 'middle' : 'middle'}
           />
-          <h1 style={{ margin: 0, fontSize: isMobile ? 16 : 20, fontWeight: 600 }}>Tạo đơn hàng mới</h1>
+          <h1 style={{ margin: 0, fontSize: isMobile ? 16 : 20, fontWeight: 600 }}>
+            {isMobile ? 'Tạo đơn hàng' : 'Tạo đơn hàng mới'}
+          </h1>
         </div>
         {!isMobile && (
           <Space>
@@ -437,330 +459,535 @@ const OrderCreate = () => {
         )}
       </div>
 
-      <Row gutter={24}>
-        {/* Left Column - Customer & Products */}
-        <Col xs={24} lg={16}>
-          {/* Customer Info Card */}
+      {isMobile ? (
+        // Mobile Layout - Single Column
+        <div>
+          {/* Customer Selection - Compact */}
           <Card
-            title={
-              <Space>
-                <UserOutlined style={{ color: '#2a9299' }} />
-                <span>Thông tin khách hàng</span>
-              </Space>
-            }
-            style={{ marginBottom: isMobile ? 16 : 24 }}
-            size={isMobile ? 'small' : 'default'}
+            size="small"
+            style={{ marginBottom: 12 }}
+            bodyStyle={{ padding: 12 }}
           >
             <Form form={form} layout="vertical">
-              <Row gutter={16}>
-                <Col xs={24} md={16}>
-                  <Form.Item
-                    name="customerId"
-                    label="Khách hàng"
-                    rules={[{ required: true, message: 'Vui lòng chọn khách hàng' }]}
-                  >
-                    <Select
-                      showSearch
-                      placeholder="Tìm và chọn khách hàng..."
-                      optionFilterProp="label"
-                      onChange={handleCustomerChange}
-                      loading={loading}
-                      filterOption={(input, option) =>
-                        (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-                      }
-                      options={customers.map((c) => ({
-                        value: c.id,
-                        label: `${c.name} - ${c.code}`,
-                      }))}
-                    />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} md={8}>
-                  <Form.Item
-                    name="orderDate"
-                    label="Ngày đặt hàng"
-                    initialValue={dayjs()}
-                  >
-                    <DatePicker
-                      format="DD/MM/YYYY"
-                      style={{ width: '100%' }}
-                    />
-                  </Form.Item>
-                </Col>
-              </Row>
+              <Form.Item
+                name="customerId"
+                label={<span style={{ fontWeight: 500 }}><UserOutlined /> Khách hàng</span>}
+                rules={[{ required: true, message: 'Chọn khách hàng' }]}
+                style={{ marginBottom: selectedCustomer ? 12 : 0 }}
+              >
+                <Select
+                  showSearch
+                  placeholder="Tìm khách hàng..."
+                  optionFilterProp="label"
+                  onChange={handleCustomerChange}
+                  loading={loading}
+                  size="large"
+                  filterOption={(input, option) =>
+                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                  }
+                  options={customers.map((c) => ({
+                    value: c.id,
+                    label: `${c.name} - ${c.code}`,
+                  }))}
+                />
+              </Form.Item>
 
               {selectedCustomer && (
                 <div style={{
-                  background: 'linear-gradient(135deg, #eef9fa, #d4f0f2)',
-                  padding: 20,
-                  borderRadius: 12,
-                  marginTop: 8,
+                  background: '#f0f9fa',
+                  padding: 12,
+                  borderRadius: 8,
+                  fontSize: 13,
                 }}>
-                  <Row gutter={24}>
-                    <Col xs={24} md={8}>
-                      <div style={{ marginBottom: 12 }}>
-                        <div style={{ fontSize: 12, color: '#788492', marginBottom: 4 }}>
-                          <PhoneOutlined style={{ marginRight: 6 }} />
-                          Số điện thoại
-                        </div>
-                        <div style={{ fontWeight: 500, color: '#134e52' }}>
-                          {selectedCustomer.phone || '—'}
-                        </div>
-                      </div>
-                    </Col>
-                    <Col xs={24} md={8}>
-                      <div style={{ marginBottom: 12 }}>
-                        <div style={{ fontSize: 12, color: '#788492', marginBottom: 4 }}>
-                          <TagOutlined style={{ marginRight: 6 }} />
-                          Nhóm khách hàng
-                        </div>
-                        <div style={{ fontWeight: 500 }}>
-                          <Tag color="processing" style={{ margin: 0 }}>
-                            {selectedCustomer.customerGroup?.name || 'Khách lẻ'}
-                          </Tag>
-                        </div>
-                      </div>
-                    </Col>
-                    <Col xs={24} md={8}>
-                      <div style={{ marginBottom: 12 }}>
-                        <div style={{ fontSize: 12, color: '#788492', marginBottom: 4 }}>
-                          <TagOutlined style={{ marginRight: 6 }} />
-                          Áp dụng giá
-                        </div>
-                        <div style={{ fontWeight: 500, color: '#22a06b' }}>
-                          {getPriceLabel(selectedCustomer.customerGroup?.priceType)}
-                        </div>
-                      </div>
-                    </Col>
-                    <Col xs={24}>
-                      <div>
-                        <div style={{ fontSize: 12, color: '#788492', marginBottom: 4 }}>
-                          <EnvironmentOutlined style={{ marginRight: 6 }} />
-                          Địa chỉ
-                        </div>
-                        <div style={{ fontWeight: 500, color: '#134e52' }}>
-                          {[selectedCustomer.address, selectedCustomer.ward, selectedCustomer.district]
-                            .filter(Boolean).join(', ') || '—'}
-                        </div>
-                      </div>
-                    </Col>
-                  </Row>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 16px' }}>
+                    <div>
+                      <PhoneOutlined style={{ color: '#788492', marginRight: 4 }} />
+                      <span style={{ color: '#134e52', fontWeight: 500 }}>
+                        {selectedCustomer.phone || '—'}
+                      </span>
+                    </div>
+                    <div>
+                      <Tag color="processing" style={{ margin: 0 }}>
+                        {selectedCustomer.customerGroup?.name || 'Khách lẻ'}
+                      </Tag>
+                    </div>
+                    <div>
+                      <Tag color="success" style={{ margin: 0 }}>
+                        {getPriceLabel(selectedCustomer.customerGroup?.priceType)}
+                      </Tag>
+                    </div>
+                  </div>
+                  {selectedCustomer.address && (
+                    <div style={{ marginTop: 8, color: '#566573', fontSize: 12 }}>
+                      <EnvironmentOutlined style={{ marginRight: 4 }} />
+                      {[selectedCustomer.address, selectedCustomer.ward, selectedCustomer.district]
+                        .filter(Boolean).join(', ')}
+                    </div>
+                  )}
                 </div>
               )}
+
+              <Form.Item
+                name="orderDate"
+                label="Ngày"
+                initialValue={dayjs()}
+                style={{ marginBottom: 0, marginTop: 12 }}
+              >
+                <DatePicker format="DD/MM/YYYY" style={{ width: '100%' }} size="large" />
+              </Form.Item>
             </Form>
           </Card>
 
-          {/* Products Card */}
-          <Card
-            title={
-              <Space>
-                <ShoppingCartOutlined style={{ color: '#2a9299' }} />
-                <span>Sản phẩm</span>
-                {orderItems.length > 0 && (
-                  <Tag color="processing">{orderItems.length}</Tag>
-                )}
-              </Space>
-            }
-            size={isMobile ? 'small' : 'default'}
-            style={{ marginBottom: isMobile ? 16 : 0 }}
-          >
-            <div style={{ marginBottom: 16 }}>
-              <Select
-                showSearch
-                placeholder="Tìm và thêm sản phẩm..."
-                style={{ width: '100%' }}
-                optionFilterProp="label"
-                onChange={handleAddProduct}
-                value={null}
-                loading={loading}
-                size="large"
-                filterOption={(input, option) =>
-                  (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-                }
-                suffixIcon={<PlusOutlined style={{ color: '#2a9299' }} />}
-                options={products.map((p) => ({
-                  value: p.id,
-                  label: `${p.sku} - ${p.name}`,
-                }))}
-              />
+          {/* Product Search - Prominent */}
+          <div style={{
+            position: 'sticky',
+            top: 0,
+            zIndex: 10,
+            background: '#fff',
+            padding: '8px 0',
+            marginBottom: 8,
+          }}>
+            <Select
+              showSearch
+              placeholder="+ Thêm sản phẩm..."
+              style={{ width: '100%' }}
+              optionFilterProp="label"
+              onChange={handleAddProduct}
+              value={null}
+              loading={loading}
+              size="large"
+              filterOption={(input, option) =>
+                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+              }
+              suffixIcon={<PlusOutlined style={{ color: '#2a9299', fontSize: 18 }} />}
+              options={products.map((p) => ({
+                value: p.id,
+                label: `${p.sku} - ${p.name}`,
+              }))}
+            />
+          </div>
+
+          {/* Products List */}
+          {orderItems.length === 0 ? (
+            <div style={{
+              textAlign: 'center',
+              padding: '40px 20px',
+              color: '#98a4b3',
+              background: '#fafbfc',
+              borderRadius: 12,
+            }}>
+              <ShoppingCartOutlined style={{ fontSize: 48, marginBottom: 12 }} />
+              <p style={{ margin: 0, fontSize: 15 }}>Chưa có sản phẩm</p>
+              <p style={{ margin: '4px 0 0', fontSize: 13 }}>
+                Tìm và thêm sản phẩm ở trên
+              </p>
             </div>
+          ) : (
+            <div>
+              {orderItems.map((item, index) => (
+                <OrderItemCard
+                  key={item.productId}
+                  item={item}
+                  index={index}
+                  onQuantityChange={handleQuantityChange}
+                  onPriceChange={handlePriceChange}
+                  onNoteChange={handleNoteChange}
+                  onRemove={handleRemoveItem}
+                />
+              ))}
+            </div>
+          )}
 
-            {orderItems.length === 0 ? (
-              <div style={{
-                textAlign: 'center',
-                padding: isMobile ? '32px 0' : '48px 0',
-                color: '#98a4b3',
-              }}>
-                <ShoppingCartOutlined style={{ fontSize: isMobile ? 36 : 48, marginBottom: 12 }} />
-                <p style={{ margin: 0, fontSize: isMobile ? 14 : 16 }}>Chưa có sản phẩm nào</p>
-                <p style={{ margin: '4px 0 0', fontSize: 12 }}>
-                  Tìm kiếm và thêm sản phẩm vào đơn hàng
-                </p>
-              </div>
-            ) : isMobile ? (
-              <div>
-                {orderItems.map((item, index) => (
-                  <OrderItemCard
-                    key={item.productId}
-                    item={item}
-                    index={index}
-                    onQuantityChange={handleQuantityChange}
-                    onPriceChange={handlePriceChange}
-                    onNoteChange={handleNoteChange}
-                    onRemove={handleRemoveItem}
-                  />
-                ))}
-              </div>
-            ) : (
-              <Table
-                dataSource={orderItems}
-                columns={columns}
-                rowKey="productId"
-                pagination={false}
-                size="middle"
-              />
-            )}
-          </Card>
-        </Col>
-
-        {/* Right Column - Summary */}
-        <Col xs={24} lg={8}>
-          <Card
-            title={
-              <Space>
-                <TagOutlined style={{ color: '#d4a853' }} />
-                <span>Tổng cộng</span>
-              </Space>
-            }
-            style={{ position: isMobile ? 'relative' : 'sticky', top: isMobile ? 0 : 88 }}
-            size={isMobile ? 'small' : 'default'}
-          >
-            <Form form={form} layout="vertical">
-              <div className="total-section">
-                {/* Subtotal */}
-                <div className="total-row">
-                  <span style={{ color: '#788492' }}>Tổng tiền hàng</span>
+          {/* Summary Section */}
+          {orderItems.length > 0 && (
+            <Card
+              size="small"
+              style={{ marginTop: 12 }}
+              bodyStyle={{ padding: 12 }}
+            >
+              <Form form={form}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <span style={{ color: '#788492' }}>Tổng tiền hàng ({orderItems.length} SP)</span>
                   <span style={{ fontWeight: 500 }}>{formatPrice(totals.subtotal)}</span>
                 </div>
 
-                {/* Discount */}
-                <div className="total-row" style={{ alignItems: 'flex-start' }}>
-                  <span style={{ color: '#788492', paddingTop: 8 }}>Chiết khấu</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <span style={{ color: '#788492' }}>Chiết khấu</span>
                   <Form.Item name="discount" noStyle initialValue={0}>
                     <InputNumber
                       min={0}
                       formatter={(val) => `${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                       parser={(val) => val.replace(/\,/g, '')}
-                      style={{ width: 140 }}
+                      style={{ width: 120 }}
+                      size="small"
                       onChange={() => form.validateFields()}
-                      addonAfter="đ"
                     />
                   </Form.Item>
                 </div>
 
-                <Divider style={{ margin: '16px 0' }} />
-
-                {/* Grand Total */}
-                <div className="total-row grand-total">
-                  <span className="label">Tổng thanh toán</span>
-                  <span className="value">{formatPrice(totals.total)}</span>
-                </div>
-
-                {/* Payment */}
-                <div className="total-row" style={{ alignItems: 'flex-start', marginTop: 16 }}>
-                  <span style={{ color: '#788492', paddingTop: 8 }}>Thanh toán</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <span style={{ color: '#788492' }}>Thanh toán</span>
                   <Form.Item name="paidAmount" noStyle initialValue={0}>
                     <InputNumber
                       min={0}
                       max={totals.total}
                       formatter={(val) => `${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                       parser={(val) => val.replace(/\,/g, '')}
-                      style={{ width: 140 }}
+                      style={{ width: 120 }}
+                      size="small"
                       onChange={() => form.validateFields()}
-                      addonAfter="đ"
                     />
                   </Form.Item>
                 </div>
 
-                {/* Debt Amount */}
-                <div className={`debt-amount ${totals.debtAmount <= 0 ? 'paid' : ''}`}>
+                <Form.Item name="note" style={{ marginBottom: 0, marginTop: 12 }}>
+                  <Input.TextArea
+                    rows={2}
+                    placeholder="Ghi chú đơn hàng..."
+                    style={{ resize: 'none' }}
+                  />
+                </Form.Item>
+              </Form>
+            </Card>
+          )}
+        </div>
+      ) : (
+        // Desktop Layout - Two Columns
+        <Row gutter={24}>
+          <Col xs={24} lg={16}>
+            {/* Customer Info Card */}
+            <Card
+              title={
+                <Space>
+                  <UserOutlined style={{ color: '#2a9299' }} />
+                  <span>Thông tin khách hàng</span>
+                </Space>
+              }
+              style={{ marginBottom: 24 }}
+            >
+              <Form form={form} layout="vertical">
+                <Row gutter={16}>
+                  <Col xs={24} md={16}>
+                    <Form.Item
+                      name="customerId"
+                      label="Khách hàng"
+                      rules={[{ required: true, message: 'Vui lòng chọn khách hàng' }]}
+                    >
+                      <Select
+                        showSearch
+                        placeholder="Tìm và chọn khách hàng..."
+                        optionFilterProp="label"
+                        onChange={handleCustomerChange}
+                        loading={loading}
+                        filterOption={(input, option) =>
+                          (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                        }
+                        options={customers.map((c) => ({
+                          value: c.id,
+                          label: `${c.name} - ${c.code}`,
+                        }))}
+                      />
+                    </Form.Item>
+                  </Col>
+                  <Col xs={24} md={8}>
+                    <Form.Item
+                      name="orderDate"
+                      label="Ngày đặt hàng"
+                      initialValue={dayjs()}
+                    >
+                      <DatePicker
+                        format="DD/MM/YYYY"
+                        style={{ width: '100%' }}
+                      />
+                    </Form.Item>
+                  </Col>
+                </Row>
+
+                {selectedCustomer && (
                   <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
+                    background: 'linear-gradient(135deg, #eef9fa, #d4f0f2)',
+                    padding: 20,
+                    borderRadius: 12,
+                    marginTop: 8,
                   }}>
-                    <span style={{
-                      fontWeight: 500,
-                      color: totals.debtAmount > 0 ? '#de350b' : '#22a06b',
-                    }}>
-                      {totals.debtAmount > 0 ? 'Còn nợ' : 'Đã thanh toán đủ'}
-                    </span>
-                    <span style={{
-                      fontWeight: 700,
-                      fontSize: 18,
-                      color: totals.debtAmount > 0 ? '#de350b' : '#22a06b',
-                    }}>
-                      {formatPrice(Math.abs(totals.debtAmount))}
-                    </span>
+                    <Row gutter={24}>
+                      <Col xs={24} md={8}>
+                        <div style={{ marginBottom: 12 }}>
+                          <div style={{ fontSize: 12, color: '#788492', marginBottom: 4 }}>
+                            <PhoneOutlined style={{ marginRight: 6 }} />
+                            Số điện thoại
+                          </div>
+                          <div style={{ fontWeight: 500, color: '#134e52' }}>
+                            {selectedCustomer.phone || '—'}
+                          </div>
+                        </div>
+                      </Col>
+                      <Col xs={24} md={8}>
+                        <div style={{ marginBottom: 12 }}>
+                          <div style={{ fontSize: 12, color: '#788492', marginBottom: 4 }}>
+                            <TagOutlined style={{ marginRight: 6 }} />
+                            Nhóm khách hàng
+                          </div>
+                          <div style={{ fontWeight: 500 }}>
+                            <Tag color="processing" style={{ margin: 0 }}>
+                              {selectedCustomer.customerGroup?.name || 'Khách lẻ'}
+                            </Tag>
+                          </div>
+                        </div>
+                      </Col>
+                      <Col xs={24} md={8}>
+                        <div style={{ marginBottom: 12 }}>
+                          <div style={{ fontSize: 12, color: '#788492', marginBottom: 4 }}>
+                            <TagOutlined style={{ marginRight: 6 }} />
+                            Áp dụng giá
+                          </div>
+                          <div style={{ fontWeight: 500, color: '#22a06b' }}>
+                            {getPriceLabel(selectedCustomer.customerGroup?.priceType)}
+                          </div>
+                        </div>
+                      </Col>
+                      <Col xs={24}>
+                        <div>
+                          <div style={{ fontSize: 12, color: '#788492', marginBottom: 4 }}>
+                            <EnvironmentOutlined style={{ marginRight: 6 }} />
+                            Địa chỉ
+                          </div>
+                          <div style={{ fontWeight: 500, color: '#134e52' }}>
+                            {[selectedCustomer.address, selectedCustomer.ward, selectedCustomer.district]
+                              .filter(Boolean).join(', ') || '—'}
+                          </div>
+                        </div>
+                      </Col>
+                    </Row>
                   </div>
-                </div>
+                )}
+              </Form>
+            </Card>
+
+            {/* Products Card */}
+            <Card
+              title={
+                <Space>
+                  <ShoppingCartOutlined style={{ color: '#2a9299' }} />
+                  <span>Sản phẩm</span>
+                  {orderItems.length > 0 && (
+                    <Tag color="processing">{orderItems.length}</Tag>
+                  )}
+                </Space>
+              }
+            >
+              <div style={{ marginBottom: 16 }}>
+                <Select
+                  showSearch
+                  placeholder="Tìm và thêm sản phẩm..."
+                  style={{ width: '100%' }}
+                  optionFilterProp="label"
+                  onChange={handleAddProduct}
+                  value={null}
+                  loading={loading}
+                  size="large"
+                  filterOption={(input, option) =>
+                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                  }
+                  suffixIcon={<PlusOutlined style={{ color: '#2a9299' }} />}
+                  options={products.map((p) => ({
+                    value: p.id,
+                    label: `${p.sku} - ${p.name}`,
+                  }))}
+                />
               </div>
 
-              <Divider />
-
-              {/* Note */}
-              <Form.Item name="note" label="Ghi chú">
-                <Input.TextArea
-                  rows={3}
-                  placeholder="Ghi chú cho đơn hàng..."
-                  style={{ resize: 'none' }}
+              {orderItems.length === 0 ? (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '48px 0',
+                  color: '#98a4b3',
+                }}>
+                  <ShoppingCartOutlined style={{ fontSize: 48, marginBottom: 12 }} />
+                  <p style={{ margin: 0, fontSize: 16 }}>Chưa có sản phẩm nào</p>
+                  <p style={{ margin: '4px 0 0', fontSize: 12 }}>
+                    Tìm kiếm và thêm sản phẩm vào đơn hàng
+                  </p>
+                </div>
+              ) : (
+                <Table
+                  dataSource={orderItems}
+                  columns={columns}
+                  rowKey="productId"
+                  pagination={false}
+                  size="middle"
                 />
-              </Form.Item>
+              )}
+            </Card>
+          </Col>
 
-              {/* Actions */}
-              <Button
-                type="primary"
-                size="large"
-                block
-                icon={<SaveOutlined />}
-                onClick={handleSubmit}
-                loading={submitting}
-                disabled={orderItems.length === 0 || !selectedCustomer}
-              >
-                Tạo đơn hàng
-              </Button>
-            </Form>
-          </Card>
-        </Col>
-      </Row>
+          {/* Right Column - Summary */}
+          <Col xs={24} lg={8}>
+            <Card
+              title={
+                <Space>
+                  <TagOutlined style={{ color: '#d4a853' }} />
+                  <span>Tổng cộng</span>
+                </Space>
+              }
+              style={{ position: 'sticky', top: 88 }}
+            >
+              <Form form={form} layout="vertical">
+                <div className="total-section">
+                  <div className="total-row">
+                    <span style={{ color: '#788492' }}>Tổng tiền hàng</span>
+                    <span style={{ fontWeight: 500 }}>{formatPrice(totals.subtotal)}</span>
+                  </div>
 
-      {/* Mobile Fixed Footer */}
+                  <div className="total-row" style={{ alignItems: 'flex-start' }}>
+                    <span style={{ color: '#788492', paddingTop: 8 }}>Chiết khấu</span>
+                    <Form.Item name="discount" noStyle initialValue={0}>
+                      <InputNumber
+                        min={0}
+                        formatter={(val) => `${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                        parser={(val) => val.replace(/\,/g, '')}
+                        style={{ width: 140 }}
+                        onChange={() => form.validateFields()}
+                        addonAfter="đ"
+                      />
+                    </Form.Item>
+                  </div>
+
+                  <Divider style={{ margin: '16px 0' }} />
+
+                  <div className="total-row grand-total">
+                    <span className="label">Tổng thanh toán</span>
+                    <span className="value">{formatPrice(totals.total)}</span>
+                  </div>
+
+                  <div className="total-row" style={{ alignItems: 'flex-start', marginTop: 16 }}>
+                    <span style={{ color: '#788492', paddingTop: 8 }}>Thanh toán</span>
+                    <Form.Item name="paidAmount" noStyle initialValue={0}>
+                      <InputNumber
+                        min={0}
+                        max={totals.total}
+                        formatter={(val) => `${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                        parser={(val) => val.replace(/\,/g, '')}
+                        style={{ width: 140 }}
+                        onChange={() => form.validateFields()}
+                        addonAfter="đ"
+                      />
+                    </Form.Item>
+                  </div>
+
+                  <div className={`debt-amount ${totals.debtAmount <= 0 ? 'paid' : ''}`}>
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}>
+                      <span style={{
+                        fontWeight: 500,
+                        color: totals.debtAmount > 0 ? '#de350b' : '#22a06b',
+                      }}>
+                        {totals.debtAmount > 0 ? 'Còn nợ' : 'Đã thanh toán đủ'}
+                      </span>
+                      <span style={{
+                        fontWeight: 700,
+                        fontSize: 18,
+                        color: totals.debtAmount > 0 ? '#de350b' : '#22a06b',
+                      }}>
+                        {formatPrice(Math.abs(totals.debtAmount))}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <Divider />
+
+                <Form.Item name="note" label="Ghi chú">
+                  <Input.TextArea
+                    rows={3}
+                    placeholder="Ghi chú cho đơn hàng..."
+                    style={{ resize: 'none' }}
+                  />
+                </Form.Item>
+
+                <Button
+                  type="primary"
+                  size="large"
+                  block
+                  icon={<SaveOutlined />}
+                  onClick={handleSubmit}
+                  loading={submitting}
+                  disabled={orderItems.length === 0 || !selectedCustomer}
+                >
+                  Tạo đơn hàng
+                </Button>
+              </Form>
+            </Card>
+          </Col>
+        </Row>
+      )}
+
+      {/* Mobile Fixed Footer with Total */}
       {isMobile && (
         <div style={{
           position: 'fixed',
           bottom: 0,
           left: 0,
           right: 0,
-          padding: '12px 16px',
           background: '#fff',
-          boxShadow: '0 -2px 8px rgba(0,0,0,0.1)',
+          boxShadow: '0 -4px 12px rgba(0,0,0,0.1)',
           zIndex: 100,
-          display: 'flex',
-          gap: 12,
         }}>
-          <Button onClick={() => navigate('/orders')} style={{ flex: 1 }}>
-            Hủy
-          </Button>
-          <Button
-            type="primary"
-            icon={<SaveOutlined />}
-            onClick={handleSubmit}
-            loading={submitting}
-            disabled={orderItems.length === 0 || !selectedCustomer}
-            style={{ flex: 2 }}
-          >
-            Lưu đơn hàng
-          </Button>
+          {/* Total Summary Row */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '10px 16px',
+            borderBottom: '1px solid #f0f0f0',
+            background: totals.debtAmount > 0 ? '#fff8f7' : '#f6fff9',
+          }}>
+            <div>
+              <div style={{ fontSize: 12, color: '#788492' }}>Tổng thanh toán</div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: '#2a9299' }}>
+                {formatPrice(totals.total)}
+              </div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: 12, color: totals.debtAmount > 0 ? '#de350b' : '#22a06b' }}>
+                {totals.debtAmount > 0 ? 'Còn nợ' : 'Đã thanh toán đủ'}
+              </div>
+              <div style={{
+                fontSize: 16,
+                fontWeight: 600,
+                color: totals.debtAmount > 0 ? '#de350b' : '#22a06b',
+              }}>
+                {formatPrice(Math.abs(totals.debtAmount))}
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div style={{
+            display: 'flex',
+            gap: 12,
+            padding: '12px 16px',
+          }}>
+            <Button
+              onClick={() => navigate('/orders')}
+              style={{ flex: 1, height: 44 }}
+            >
+              Hủy
+            </Button>
+            <Button
+              type="primary"
+              icon={<SaveOutlined />}
+              onClick={handleSubmit}
+              loading={submitting}
+              disabled={orderItems.length === 0 || !selectedCustomer}
+              style={{ flex: 2, height: 44 }}
+            >
+              Lưu đơn hàng
+            </Button>
+          </div>
         </div>
       )}
     </div>
