@@ -219,7 +219,7 @@ const OrderDetail = () => {
   const showApprove = order.status === 'PENDING' && canEdit
   const showComplete = order.status === 'APPROVED' && canEdit
   const showPayment = debtAmount > 0 && order.status !== 'CANCELLED'
-  const showCancel = order.status === 'PENDING'
+  const showCancel = ['PENDING', 'APPROVED'].includes(order.status)
   const hasActions = showApprove || showComplete || showPayment || showCancel
 
   return (

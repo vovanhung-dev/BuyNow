@@ -406,7 +406,7 @@ const cancel = async (req, res) => {
       });
     }
 
-    // Nhân viên chỉ hủy được đơn của mình và đơn PENDING
+    // Nhân viên chỉ hủy được đơn của mình
     if (req.user.role === 'SALES') {
       if (order.userId !== req.user.id) {
         return res.status(403).json({
@@ -414,18 +414,15 @@ const cancel = async (req, res) => {
           message: 'Không có quyền hủy đơn hàng này',
         });
       }
-      if (order.status !== 'PENDING') {
-        return res.status(400).json({
-          success: false,
-          message: 'Chỉ có thể hủy đơn hàng ở trạng thái mới tạo',
-        });
-      }
     }
 
-    if (order.status === 'CANCELLED') {
+    // Chỉ cho phép hủy đơn PENDING hoặc APPROVED
+    if (!['PENDING', 'APPROVED'].includes(order.status)) {
       return res.status(400).json({
         success: false,
-        message: 'Đơn hàng đã được hủy trước đó',
+        message: order.status === 'CANCELLED'
+          ? 'Đơn hàng đã được hủy trước đó'
+          : 'Không thể hủy đơn hàng đã hoàn thành',
       });
     }
 
