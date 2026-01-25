@@ -36,7 +36,14 @@ const getMenuItems = (userRole) => {
 
   items.push(
     { key: '/orders', icon: <ShoppingCartOutlined />, label: 'Đơn hàng' },
-    { key: '/stock', icon: <DatabaseOutlined />, label: 'Tồn kho' },
+  )
+
+  // Stock - only for ADMIN and MANAGER
+  if (isManager) {
+    items.push({ key: '/stock', icon: <DatabaseOutlined />, label: 'Tồn kho' })
+  }
+
+  items.push(
     { key: '/payments', icon: <DollarOutlined />, label: 'Thanh toán' },
   )
 
