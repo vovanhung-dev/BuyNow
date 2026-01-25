@@ -112,4 +112,12 @@ export const reportsAPI = {
   getEmployeeOrders: (id, params) => api.get(`/reports/by-employee/${id}`, { params }),
 }
 
+// Returns API
+export const returnsAPI = {
+  getAll: (params) => api.get('/returns', { params }),
+  getById: (id) => api.get(`/returns/${id}`),
+  getByOrder: (orderId) => api.get(`/orders/${orderId}/returns`),
+  create: (data) => api.post('/returns', data),
+}
+
 export default api

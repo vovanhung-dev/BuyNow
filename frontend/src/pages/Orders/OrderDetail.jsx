@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
-  Card, Descriptions, Table, Tag, Button, Space, Typography, message, Popconfirm, Modal, InputNumber, Select, Grid, Spin
+  Card, Descriptions, Table, Tag, Button, Space, Typography, message, Popconfirm, Modal, InputNumber, Select, Grid, Spin, Checkbox, Input, Row, Col
 } from 'antd'
 import {
   PrinterOutlined, CheckOutlined, CloseOutlined, DollarOutlined, ArrowLeftOutlined,
-  ClockCircleOutlined, UserOutlined, PhoneOutlined, EnvironmentOutlined
+  ClockCircleOutlined, UserOutlined, PhoneOutlined, EnvironmentOutlined, RollbackOutlined, ShoppingCartOutlined, CreditCardOutlined, FileTextOutlined
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
-import { ordersAPI, paymentsAPI } from '../../services/api'
+import { ordersAPI, paymentsAPI, returnsAPI } from '../../services/api'
 import { useAuthStore } from '../../store'
 
 const { Title, Text } = Typography
@@ -32,6 +32,10 @@ const OrderDetail = () => {
   const [paymentAmount, setPaymentAmount] = useState(0)
   const [paymentMethod, setPaymentMethod] = useState('CASH')
   const [submitting, setSubmitting] = useState(false)
+  const [returnModalOpen, setReturnModalOpen] = useState(false)
+  const [returnItems, setReturnItems] = useState([])
+  const [returnReason, setReturnReason] = useState('')
+  const [orderReturns, setOrderReturns] = useState([])
   const user = useAuthStore((state) => state.user)
 
   useEffect(() => {
@@ -41,13 +45,84 @@ const OrderDetail = () => {
   const loadOrder = async () => {
     setLoading(true)
     try {
-      const res = await ordersAPI.getById(id)
-      setOrder(res.data)
+      const [orderRes, returnsRes] = await Promise.all([
+        ordersAPI.getById(id),
+        returnsAPI.getByOrder(id),
+      ])
+      setOrder(orderRes.data)
+      setOrderReturns(returnsRes.data || [])
     } catch (error) {
       message.error('Lỗi tải đơn hàng')
       navigate('/orders')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const openReturnModal = () => {
+    // Initialize return items from order items
+    const items = order.items.map(item => ({
+      orderItemId: item.id,
+      productId: item.productId,
+      productName: item.productName,
+      unit: item.unit,
+      maxQuantity: item.quantity,
+      quantity: 0,
+      unitPrice: Number(item.unitPrice),
+      selected: false,
+    }))
+    setReturnItems(items)
+    setReturnReason('')
+    setReturnModalOpen(true)
+  }
+
+  const handleReturnItemChange = (index, field, value) => {
+    setReturnItems(prev => {
+      const newItems = [...prev]
+      newItems[index] = { ...newItems[index], [field]: value }
+      if (field === 'selected' && !value) {
+        newItems[index].quantity = 0
+      }
+      if (field === 'selected' && value && newItems[index].quantity === 0) {
+        newItems[index].quantity = newItems[index].maxQuantity
+      }
+      return newItems
+    })
+  }
+
+  const handleReturn = async () => {
+    const selectedItems = returnItems.filter(item => item.selected && item.quantity > 0)
+
+    if (selectedItems.length === 0) {
+      message.warning('Vui lòng chọn sản phẩm cần trả')
+      return
+    }
+
+    setSubmitting(true)
+    try {
+      const totalRefund = selectedItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0)
+
+      await returnsAPI.create({
+        orderId: id,
+        items: selectedItems.map(item => ({
+          orderItemId: item.orderItemId,
+          productId: item.productId,
+          productName: item.productName,
+          unit: item.unit,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+        })),
+        refundAmount: totalRefund,
+        reason: returnReason,
+      })
+
+      message.success('Tạo phiếu trả hàng thành công')
+      setReturnModalOpen(false)
+      loadOrder()
+    } catch (error) {
+      message.error(error.message || 'Lỗi tạo phiếu trả hàng')
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -220,7 +295,8 @@ const OrderDetail = () => {
   const showComplete = order.status === 'APPROVED' && canEdit
   const showPayment = debtAmount > 0 && order.status !== 'CANCELLED'
   const showCancel = ['PENDING', 'APPROVED'].includes(order.status)
-  const hasActions = showApprove || showComplete || showPayment || showCancel
+  const showReturn = order.status === 'COMPLETED'
+  const hasActions = showApprove || showComplete || showPayment || showCancel || showReturn
 
   return (
     <div className="animate-fade-in" style={{
@@ -297,6 +373,11 @@ const OrderDetail = () => {
                   </Button>
                 </Popconfirm>
               )}
+              {showReturn && (
+                <Button icon={<RollbackOutlined />} onClick={openReturnModal}>
+                  Trả hàng
+                </Button>
+              )}
               <Button icon={<PrinterOutlined />} onClick={handlePrint}>
                 In
               </Button>
@@ -306,24 +387,116 @@ const OrderDetail = () => {
       </div>
 
       <div className="print-invoice">
-        {/* Print Header - Hidden on screen */}
-        <div className="print-only" style={{ textAlign: 'center', marginBottom: 20, display: 'none' }}>
-          <Title level={3} style={{ margin: 0 }}>NPP HÙNG THƯ</Title>
-          <p>Điện thoại: 0865.888.128 - 09.1234.1256</p>
-          <p>Địa chỉ: Số nhà 29 đường Lưu Cơ, phố Kim Đa, TP Ninh Bình</p>
-          <Title level={4} style={{ marginTop: 16 }}>HÓA ĐƠN BÁN HÀNG</Title>
+        {/* Print Layout - Only visible when printing */}
+        <div className="print-only invoice-print-layout">
+          <div className="invoice-header">
+            <div className="company-name">NPP HÙNG THƯ</div>
+            <div className="company-contact">ĐT: 0865.888.128 - 09.1234.1256</div>
+            <div className="company-contact">Số nhà 29 đường Lưu Cơ, phố Kim Đa, TP Ninh Bình</div>
+          </div>
+
+          <div className="invoice-title">HÓA ĐƠN BÁN HÀNG</div>
+          <div className="invoice-code">
+            Số: <strong>{order.code}</strong> | Ngày: <strong>{dayjs(order.orderDate).format('DD/MM/YYYY')}</strong>
+          </div>
+
+          <div className="customer-section">
+            <div className="customer-row">
+              <span className="customer-label">Khách hàng:</span>
+              <span className="customer-value"><strong>{order.customerName}</strong></span>
+            </div>
+            <div className="customer-row">
+              <span className="customer-label">Điện thoại:</span>
+              <span className="customer-value">{order.customerPhone || '-'}</span>
+            </div>
+            <div className="customer-row">
+              <span className="customer-label">Địa chỉ:</span>
+              <span className="customer-value">{order.customerAddress || '-'}</span>
+            </div>
+          </div>
+
+          <table className="products-table">
+            <thead>
+              <tr>
+                <th style={{ width: '40px' }}>STT</th>
+                <th>Tên sản phẩm</th>
+                <th style={{ width: '60px' }}>ĐVT</th>
+                <th style={{ width: '50px' }}>SL</th>
+                <th style={{ width: '100px' }}>Đơn giá</th>
+                <th style={{ width: '110px' }}>Thành tiền</th>
+              </tr>
+            </thead>
+            <tbody>
+              {order.items.map((item) => (
+                <tr key={item.id}>
+                  <td className="text-center">{item.stt}</td>
+                  <td>{item.productName}{item.note ? ` (${item.note})` : ''}</td>
+                  <td className="text-center">{item.unit || '-'}</td>
+                  <td className="text-center">{item.quantity}</td>
+                  <td className="text-right">{Number(item.unitPrice).toLocaleString('vi-VN')}</td>
+                  <td className="text-right">{Number(item.total).toLocaleString('vi-VN')}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div className="summary-section">
+            <div className="summary-table">
+              <div className="summary-row">
+                <span>Tổng tiền hàng:</span>
+                <span>{Number(order.subtotal).toLocaleString('vi-VN')} đ</span>
+              </div>
+              {Number(order.discount) > 0 && (
+                <div className="summary-row">
+                  <span>Chiết khấu:</span>
+                  <span>-{Number(order.discount).toLocaleString('vi-VN')} đ</span>
+                </div>
+              )}
+              <div className="summary-row total">
+                <span>TỔNG CỘNG:</span>
+                <span>{Number(order.total).toLocaleString('vi-VN')} đ</span>
+              </div>
+              <div className="summary-row">
+                <span>Đã thanh toán:</span>
+                <span>{Number(order.paidAmount).toLocaleString('vi-VN')} đ</span>
+              </div>
+              <div className="summary-row debt">
+                <span>Còn nợ:</span>
+                <span>{Number(order.debtAmount).toLocaleString('vi-VN')} đ</span>
+              </div>
+            </div>
+          </div>
+
+          {order.note && (
+            <div className="invoice-note">
+              <span className="invoice-note-title">Ghi chú: </span>
+              {order.note}
+            </div>
+          )}
+
+          <div className="signatures">
+            <div className="signature-box">
+              <div className="signature-title">Người mua hàng</div>
+              <div className="signature-name">(Ký, ghi rõ họ tên)</div>
+            </div>
+            <div className="signature-box">
+              <div className="signature-title">Người bán hàng</div>
+              <div className="signature-name">{order.user?.name}</div>
+            </div>
+          </div>
+
+          <div className="invoice-footer">
+            Cảm ơn quý khách đã mua hàng!
+          </div>
         </div>
 
-        {/* Customer Info */}
-        <Card
-          style={{
-            marginBottom: 16,
-            border: isMobile ? 'none' : undefined,
-            boxShadow: isMobile ? 'none' : undefined,
-          }}
-          bodyStyle={{ padding: isMobile ? '16px 0' : 24 }}
-        >
-          {isMobile ? (
+        {/* Desktop: 2 column layout | Mobile: single column */}
+        {isMobile ? (
+          /* Mobile Layout - Customer Info */
+          <Card
+            style={{ marginBottom: 16, border: 'none', boxShadow: 'none' }}
+            bodyStyle={{ padding: '16px 0' }}
+          >
             <div>
               {/* Date */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
@@ -363,23 +536,134 @@ const OrderDetail = () => {
                 <span style={{ fontWeight: 500 }}>{order.user?.name}</span>
               </div>
             </div>
-          ) : (
-            <Descriptions column={2} size="small">
-              <Descriptions.Item label="Mã đơn">{order.code}</Descriptions.Item>
-              <Descriptions.Item label="Ngày">
-                {dayjs(order.orderDate).format('DD/MM/YYYY')}
-              </Descriptions.Item>
-              <Descriptions.Item label="Khách hàng">{order.customerName}</Descriptions.Item>
-              <Descriptions.Item label="Điện thoại">{order.customerPhone || '-'}</Descriptions.Item>
-              <Descriptions.Item label="Địa chỉ" span={2}>{order.customerAddress || '-'}</Descriptions.Item>
-              <Descriptions.Item label="Nhân viên">{order.user?.name}</Descriptions.Item>
-            </Descriptions>
-          )}
-        </Card>
+          </Card>
+        ) : (
+          /* Desktop Layout - 2 columns */
+          <Row gutter={24} style={{ marginBottom: 24 }}>
+            {/* Left Column - Customer Info */}
+            <Col span={14}>
+              <Card
+                title={
+                  <Space>
+                    <UserOutlined style={{ color: '#2a9299' }} />
+                    <span>Thông tin khách hàng</span>
+                  </Space>
+                }
+                style={{ height: '100%' }}
+              >
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ fontSize: 20, fontWeight: 600, color: '#134e52', marginBottom: 4 }}>
+                    {order.customerName}
+                  </div>
+                  <Tag color="blue" style={{ marginTop: 4 }}>
+                    {order.customer?.customerGroup?.name || 'Khách lẻ'}
+                  </Tag>
+                </div>
+
+                <Row gutter={[16, 16]}>
+                  <Col span={12}>
+                    <div style={{ color: '#788492', fontSize: 12, marginBottom: 4 }}>Điện thoại</div>
+                    <div style={{ fontWeight: 500 }}>
+                      {order.customerPhone ? (
+                        <a href={`tel:${order.customerPhone}`} style={{ color: '#2d3640' }}>
+                          <PhoneOutlined style={{ marginRight: 6, color: '#2a9299' }} />
+                          {order.customerPhone}
+                        </a>
+                      ) : '-'}
+                    </div>
+                  </Col>
+                  <Col span={12}>
+                    <div style={{ color: '#788492', fontSize: 12, marginBottom: 4 }}>Nhân viên bán hàng</div>
+                    <div style={{ fontWeight: 500 }}>
+                      <UserOutlined style={{ marginRight: 6, color: '#2a9299' }} />
+                      {order.user?.name}
+                    </div>
+                  </Col>
+                  <Col span={24}>
+                    <div style={{ color: '#788492', fontSize: 12, marginBottom: 4 }}>Địa chỉ</div>
+                    <div style={{ color: '#5e6c7b' }}>
+                      <EnvironmentOutlined style={{ marginRight: 6, color: '#2a9299' }} />
+                      {order.customerAddress || '-'}
+                    </div>
+                  </Col>
+                </Row>
+              </Card>
+            </Col>
+
+            {/* Right Column - Order Summary */}
+            <Col span={10}>
+              <Card
+                title={
+                  <Space>
+                    <ShoppingCartOutlined style={{ color: '#2a9299' }} />
+                    <span>Tổng quan đơn hàng</span>
+                  </Space>
+                }
+                style={{ height: '100%' }}
+              >
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                    <ClockCircleOutlined style={{ color: '#788492' }} />
+                    <span style={{ color: '#788492' }}>Ngày tạo:</span>
+                    <span style={{ fontWeight: 500 }}>{dayjs(order.orderDate).format('DD/MM/YYYY HH:mm')}</span>
+                  </div>
+                </div>
+
+                <div style={{ background: '#f8f9fa', borderRadius: 8, padding: 16 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <span style={{ color: '#788492' }}>Tổng tiền hàng:</span>
+                    <span style={{ fontWeight: 500 }}>{formatPrice(order.subtotal)}</span>
+                  </div>
+                  {Number(order.discount) > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                      <span style={{ color: '#788492' }}>Chiết khấu:</span>
+                      <span style={{ color: '#ff4d4f', fontWeight: 500 }}>-{formatPrice(order.discount)}</span>
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 8, borderTop: '1px dashed #e8e8e8', marginBottom: 8 }}>
+                    <span style={{ fontWeight: 600 }}>Tổng thanh toán:</span>
+                    <span style={{ fontWeight: 700, color: '#134e52', fontSize: 16 }}>{formatPrice(order.total)}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <span style={{ color: '#788492' }}>Đã thanh toán:</span>
+                    <span style={{ color: '#22a06b', fontWeight: 500 }}>{formatPrice(order.paidAmount)}</span>
+                  </div>
+                </div>
+
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '12px 16px',
+                  background: debtAmount > 0 ? '#ffedeb' : '#dcf7e9',
+                  borderRadius: 8,
+                  marginTop: 12,
+                }}>
+                  <span style={{ fontWeight: 600, fontSize: 15 }}>
+                    <CreditCardOutlined style={{ marginRight: 8 }} />
+                    Còn nợ:
+                  </span>
+                  <span style={{
+                    fontWeight: 700,
+                    fontSize: 18,
+                    color: debtAmount > 0 ? '#de350b' : '#22a06b'
+                  }}>
+                    {formatPrice(order.debtAmount)}
+                  </span>
+                </div>
+              </Card>
+            </Col>
+          </Row>
+        )}
 
         {/* Order Items */}
         <Card
-          title={<span style={{ fontSize: isMobile ? 14 : 16 }}>Chi tiết sản phẩm ({order.items.length})</span>}
+          title={
+            <Space>
+              {!isMobile && <ShoppingCartOutlined style={{ color: '#2a9299' }} />}
+              <span style={{ fontSize: isMobile ? 14 : 16 }}>Chi tiết sản phẩm ({order.items.length})</span>
+            </Space>
+          }
           style={{
             marginBottom: 16,
             border: isMobile ? 'none' : undefined,
@@ -394,7 +678,7 @@ const OrderDetail = () => {
                 <ItemCard key={item.id} item={item} />
               ))}
               {/* Summary for Mobile */}
-              <div style={{ marginTop: 16, padding: isMobile ? '16px 0 0 0' : 16 }}>
+              <div style={{ marginTop: 16, padding: '16px 0 0 0' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
                   <span style={{ color: '#788492' }}>Tổng tiền hàng:</span>
                   <span>{formatPrice(order.subtotal)}</span>
@@ -444,75 +728,184 @@ const OrderDetail = () => {
               columns={itemColumns}
               rowKey="id"
               pagination={false}
-              size="small"
-              summary={() => (
-                <Table.Summary>
-                  <Table.Summary.Row>
-                    <Table.Summary.Cell colSpan={5} align="right"><strong>Tổng tiền hàng:</strong></Table.Summary.Cell>
-                    <Table.Summary.Cell>{formatPrice(order.subtotal)}</Table.Summary.Cell>
-                    <Table.Summary.Cell />
-                  </Table.Summary.Row>
-                  {Number(order.discount) > 0 && (
-                    <Table.Summary.Row>
-                      <Table.Summary.Cell colSpan={5} align="right">Chiết khấu:</Table.Summary.Cell>
-                      <Table.Summary.Cell>-{formatPrice(order.discount)}</Table.Summary.Cell>
-                      <Table.Summary.Cell />
-                    </Table.Summary.Row>
-                  )}
-                  <Table.Summary.Row>
-                    <Table.Summary.Cell colSpan={5} align="right"><strong>Tổng thanh toán:</strong></Table.Summary.Cell>
-                    <Table.Summary.Cell><strong style={{ color: '#1890ff' }}>{formatPrice(order.total)}</strong></Table.Summary.Cell>
-                    <Table.Summary.Cell />
-                  </Table.Summary.Row>
-                  <Table.Summary.Row>
-                    <Table.Summary.Cell colSpan={5} align="right">Đã thanh toán:</Table.Summary.Cell>
-                    <Table.Summary.Cell style={{ color: 'green' }}>{formatPrice(order.paidAmount)}</Table.Summary.Cell>
-                    <Table.Summary.Cell />
-                  </Table.Summary.Row>
-                  <Table.Summary.Row>
-                    <Table.Summary.Cell colSpan={5} align="right"><strong>Còn nợ:</strong></Table.Summary.Cell>
-                    <Table.Summary.Cell><strong style={{ color: debtAmount > 0 ? 'red' : 'green' }}>{formatPrice(order.debtAmount)}</strong></Table.Summary.Cell>
-                    <Table.Summary.Cell />
-                  </Table.Summary.Row>
-                </Table.Summary>
-              )}
+              size="middle"
+              bordered
+              style={{ marginBottom: 0 }}
             />
           )}
         </Card>
 
-        {/* Payment History */}
-        {order.payments?.length > 0 && (
-          <Card
-            title={<span style={{ fontSize: isMobile ? 14 : 16 }}>Lịch sử thanh toán ({order.payments.length})</span>}
-            className="no-print"
-            style={{
-              marginBottom: 16,
-              border: isMobile ? 'none' : undefined,
-              boxShadow: isMobile ? 'none' : undefined,
-            }}
-            bodyStyle={{ padding: isMobile ? '0' : 24 }}
-            headStyle={{ padding: isMobile ? '12px 0' : undefined, borderBottom: isMobile ? '1px solid #f0f0f0' : undefined }}
-          >
-            {isMobile ? (
-              order.payments.map((payment) => (
-                <PaymentCard key={payment.id} payment={payment} />
-              ))
-            ) : (
-              <Table
-                dataSource={order.payments}
-                columns={paymentColumns}
-                rowKey="id"
-                pagination={false}
-                size="small"
-              />
+        {/* Desktop: 2-column layout for Payment & Return History */}
+        {!isMobile && (order.payments?.length > 0 || orderReturns?.length > 0) && (
+          <Row gutter={24} className="no-print">
+            {/* Payment History */}
+            {order.payments?.length > 0 && (
+              <Col span={orderReturns?.length > 0 ? 12 : 24}>
+                <Card
+                  title={
+                    <Space>
+                      <DollarOutlined style={{ color: '#22a06b' }} />
+                      <span>Lịch sử thanh toán ({order.payments.length})</span>
+                    </Space>
+                  }
+                  style={{ marginBottom: 24, height: '100%' }}
+                >
+                  <Table
+                    dataSource={order.payments}
+                    columns={paymentColumns}
+                    rowKey="id"
+                    pagination={false}
+                    size="small"
+                  />
+                </Card>
+              </Col>
             )}
+
+            {/* Return History */}
+            {orderReturns?.length > 0 && (
+              <Col span={order.payments?.length > 0 ? 12 : 24}>
+                <Card
+                  title={
+                    <Space>
+                      <RollbackOutlined style={{ color: '#de350b' }} />
+                      <span>Lịch sử trả hàng ({orderReturns.length})</span>
+                    </Space>
+                  }
+                  style={{ marginBottom: 24, height: '100%' }}
+                >
+                  {orderReturns.map((ret) => (
+                    <div
+                      key={ret.id}
+                      style={{
+                        padding: '12px 16px',
+                        background: '#fef7f6',
+                        borderRadius: 8,
+                        marginBottom: 12,
+                        border: '1px solid #ffedeb',
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div>
+                          <div style={{ fontWeight: 600, color: '#134e52' }}>{ret.code}</div>
+                          <div style={{ fontSize: 12, color: '#788492', marginTop: 2 }}>
+                            <ClockCircleOutlined style={{ marginRight: 4 }} />
+                            {dayjs(ret.createdAt).format('DD/MM/YYYY HH:mm')}
+                            {ret.user?.name && <span> • {ret.user.name}</span>}
+                          </div>
+                          {ret.reason && (
+                            <div style={{ fontSize: 12, color: '#faad14', marginTop: 4, fontStyle: 'italic' }}>
+                              Lý do: {ret.reason}
+                            </div>
+                          )}
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ color: '#de350b', fontWeight: 600, fontSize: 15 }}>
+                            -{formatPrice(ret.totalAmount)}
+                          </div>
+                          <Tag color="red" style={{ marginTop: 4 }}>
+                            {ret.items?.length || ret._count?.items || 0} sản phẩm
+                          </Tag>
+                        </div>
+                      </div>
+                      {ret.items?.length > 0 && (
+                        <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px dashed #e8e8e8' }}>
+                          {ret.items.map((item, idx) => (
+                            <div key={idx} style={{ fontSize: 13, color: '#5e6c7b', marginBottom: 4, display: 'flex', justifyContent: 'space-between' }}>
+                              <span>• {item.productName} ({item.quantity} {item.unit || ''})</span>
+                              <span>{formatPrice(item.total)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </Card>
+              </Col>
+            )}
+          </Row>
+        )}
+
+        {/* Mobile: Payment History */}
+        {isMobile && order.payments?.length > 0 && (
+          <Card
+            title={<span style={{ fontSize: 14 }}>Lịch sử thanh toán ({order.payments.length})</span>}
+            className="no-print"
+            style={{ marginBottom: 16, border: 'none', boxShadow: 'none' }}
+            bodyStyle={{ padding: '0' }}
+            headStyle={{ padding: '12px 0', borderBottom: '1px solid #f0f0f0' }}
+          >
+            {order.payments.map((payment) => (
+              <PaymentCard key={payment.id} payment={payment} />
+            ))}
+          </Card>
+        )}
+
+        {/* Mobile: Return History */}
+        {isMobile && orderReturns?.length > 0 && (
+          <Card
+            title={<span style={{ fontSize: 14 }}>Lịch sử trả hàng ({orderReturns.length})</span>}
+            className="no-print"
+            style={{ marginBottom: 16, border: 'none', boxShadow: 'none' }}
+            bodyStyle={{ padding: '0' }}
+            headStyle={{ padding: '12px 0', borderBottom: '1px solid #f0f0f0' }}
+          >
+            {orderReturns.map((ret) => (
+              <div
+                key={ret.id}
+                style={{
+                  padding: '12px 0',
+                  borderBottom: '1px solid #f0f0f0',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div>
+                    <div style={{ fontWeight: 600, color: '#134e52' }}>{ret.code}</div>
+                    <div style={{ fontSize: 12, color: '#788492', marginTop: 2 }}>
+                      <ClockCircleOutlined style={{ marginRight: 4 }} />
+                      {dayjs(ret.createdAt).format('DD/MM/YYYY HH:mm')}
+                    </div>
+                    {ret.reason && (
+                      <div style={{ fontSize: 12, color: '#faad14', marginTop: 4, fontStyle: 'italic' }}>
+                        {ret.reason}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ color: '#de350b', fontWeight: 600 }}>
+                      -{formatPrice(ret.totalAmount)}
+                    </div>
+                    <div style={{ fontSize: 12, color: '#788492' }}>
+                      {ret.items?.length || ret._count?.items || 0} sản phẩm
+                    </div>
+                  </div>
+                </div>
+                {ret.items?.length > 0 && (
+                  <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px dashed #e8e8e8' }}>
+                    {ret.items.map((item, idx) => (
+                      <div key={idx} style={{ fontSize: 13, color: '#5e6c7b', marginBottom: 4 }}>
+                        • {item.productName}: {item.quantity} {item.unit || ''} × {formatPrice(item.unitPrice)}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
           </Card>
         )}
 
         {/* Note */}
         {order.note && (
           <Card
-            title={<span style={{ fontSize: isMobile ? 14 : 16 }}>Ghi chú</span>}
+            title={
+              isMobile ? (
+                <span style={{ fontSize: 14 }}>Ghi chú</span>
+              ) : (
+                <Space>
+                  <FileTextOutlined style={{ color: '#faad14' }} />
+                  <span>Ghi chú đơn hàng</span>
+                </Space>
+              )
+            }
             style={{
               marginBottom: 16,
               border: isMobile ? 'none' : undefined,
@@ -521,7 +914,7 @@ const OrderDetail = () => {
             bodyStyle={{ padding: isMobile ? '16px 0' : 24 }}
             headStyle={{ padding: isMobile ? '12px 0' : undefined, borderBottom: isMobile ? '1px solid #f0f0f0' : undefined }}
           >
-            <Text style={{ color: '#5e6c7b' }}>{order.note}</Text>
+            <Text style={{ color: '#5e6c7b', whiteSpace: 'pre-wrap' }}>{order.note}</Text>
           </Card>
         )}
       </div>
@@ -573,6 +966,11 @@ const OrderDetail = () => {
               </Button>
             </Popconfirm>
           )}
+          {showReturn && (
+            <Button style={{ flex: 1, height: 44 }} onClick={openReturnModal}>
+              <RollbackOutlined /> Trả hàng
+            </Button>
+          )}
         </div>
       )}
 
@@ -622,6 +1020,88 @@ const OrderDetail = () => {
             </Select>
           </div>
         </Space>
+      </Modal>
+
+      {/* Return Modal */}
+      <Modal
+        title="Trả hàng"
+        open={returnModalOpen}
+        onCancel={() => setReturnModalOpen(false)}
+        onOk={handleReturn}
+        okText="Xác nhận trả hàng"
+        cancelText="Hủy"
+        confirmLoading={submitting}
+        width={600}
+      >
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontWeight: 500, marginBottom: 12 }}>Chọn sản phẩm trả:</div>
+          {returnItems.map((item, index) => (
+            <div
+              key={item.orderItemId}
+              style={{
+                padding: 12,
+                background: item.selected ? '#eef9fa' : '#f9fafb',
+                borderRadius: 8,
+                marginBottom: 8,
+                border: item.selected ? '1px solid #2a9299' : '1px solid #e8e8e8',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <Checkbox
+                  checked={item.selected}
+                  onChange={(e) => handleReturnItemChange(index, 'selected', e.target.checked)}
+                />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 500 }}>{item.productName}</div>
+                  <div style={{ fontSize: 12, color: '#788492' }}>
+                    Đã mua: {item.maxQuantity} {item.unit || ''} × {formatPrice(item.unitPrice)}
+                  </div>
+                </div>
+                {item.selected && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 13, color: '#788492' }}>Trả:</span>
+                    <InputNumber
+                      value={item.quantity}
+                      onChange={(val) => handleReturnItemChange(index, 'quantity', val)}
+                      min={1}
+                      max={item.maxQuantity}
+                      style={{ width: 70 }}
+                    />
+                  </div>
+                )}
+              </div>
+              {item.selected && item.quantity > 0 && (
+                <div style={{ marginTop: 8, textAlign: 'right', color: '#de350b', fontWeight: 500 }}>
+                  Hoàn: {formatPrice(item.unitPrice * item.quantity)}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontWeight: 500, marginBottom: 8 }}>Lý do trả hàng:</div>
+          <Input.TextArea
+            value={returnReason}
+            onChange={(e) => setReturnReason(e.target.value)}
+            placeholder="Nhập lý do trả hàng..."
+            rows={2}
+          />
+        </div>
+
+        {returnItems.some(item => item.selected && item.quantity > 0) && (
+          <div style={{
+            padding: 16,
+            background: '#ffedeb',
+            borderRadius: 8,
+            textAlign: 'center',
+          }}>
+            <div style={{ fontSize: 12, color: '#788492', marginBottom: 4 }}>Tổng tiền hoàn</div>
+            <div style={{ fontSize: 24, fontWeight: 700, color: '#de350b' }}>
+              {formatPrice(returnItems.filter(i => i.selected && i.quantity > 0).reduce((sum, i) => sum + i.unitPrice * i.quantity, 0))}
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   )

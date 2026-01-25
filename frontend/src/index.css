@@ -1029,71 +1029,233 @@ body {
    PRINT STYLES
    ================================================ */
 
-.print-invoice {
-  padding: 0;
-  max-width: 800px;
-  margin: 0 auto;
-  background: #fff;
-}
-
-@media (min-width: 768px) {
-  .print-invoice {
-    padding: 24px;
-  }
-}
-
-.print-invoice .header {
-  text-align: center;
-  margin-bottom: 32px;
-  padding-bottom: 24px;
-  border-bottom: 2px solid var(--neutral-200);
-}
-
-.print-invoice .company-name {
-  font-family: var(--font-display);
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--primary-800);
-  margin-bottom: 8px;
-}
-
-.print-invoice .company-info {
-  color: var(--neutral-600);
-  font-size: 14px;
-}
-
-.print-invoice .invoice-title {
-  font-family: var(--font-display);
-  font-size: 32px;
-  font-weight: 600;
-  color: var(--primary-700);
-  text-align: center;
-  margin: 24px 0;
-}
-
-.print-invoice .customer-info {
-  background: var(--neutral-50);
-  padding: 20px;
-  border-radius: var(--radius-md);
-  margin-bottom: 24px;
+/* Hide print-only content on screen */
+.print-only {
+  display: none !important;
 }
 
 @media print {
-  .no-print {
+  /* Hide elements not needed for print */
+  .no-print,
+  .ant-layout-sider,
+  .ant-layout-header,
+  .ant-btn,
+  .ant-modal,
+  .ant-message,
+  header,
+  nav,
+  aside {
     display: none !important;
   }
 
+  /* Reset page */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  html, body {
+    background: #fff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 12pt !important;
+  }
+
   body {
+    padding: 0 !important;
+  }
+
+  .ant-layout,
+  .ant-layout-content {
+    padding: 0 !important;
+    margin: 0 !important;
     background: #fff !important;
   }
 
-  .print-invoice {
-    padding: 0;
-    box-shadow: none;
+  /* Show print-only content */
+  .print-only {
+    display: block !important;
   }
 
-  .ant-table {
+  /* Print invoice container */
+  .print-invoice {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
     box-shadow: none !important;
+  }
+
+  /* Hide screen-only cards */
+  .print-invoice > .ant-card,
+  .print-invoice > .ant-row {
+    display: none !important;
+  }
+
+  /* Invoice print layout */
+  .invoice-print-layout {
+    display: block !important;
+    padding: 20px;
+    font-family: 'Times New Roman', serif;
+    font-size: 12pt;
+    line-height: 1.4;
+  }
+
+  .invoice-print-layout .invoice-header {
+    text-align: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #000;
+  }
+
+  .invoice-print-layout .company-name {
+    font-size: 22pt;
+    font-weight: bold;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+  }
+
+  .invoice-print-layout .company-contact {
+    font-size: 11pt;
+    margin-bottom: 3px;
+  }
+
+  .invoice-print-layout .invoice-title {
+    font-size: 18pt;
+    font-weight: bold;
+    text-align: center;
+    margin: 20px 0 15px;
+    text-transform: uppercase;
+  }
+
+  .invoice-print-layout .invoice-code {
+    text-align: center;
+    font-size: 11pt;
+    margin-bottom: 15px;
+  }
+
+  .invoice-print-layout .customer-section {
+    margin-bottom: 15px;
+    padding: 10px;
+    border: 1px solid #ccc;
+  }
+
+  .invoice-print-layout .customer-row {
+    display: flex;
+    margin-bottom: 5px;
+  }
+
+  .invoice-print-layout .customer-label {
+    width: 100px;
+    font-weight: bold;
+  }
+
+  .invoice-print-layout .customer-value {
+    flex: 1;
+  }
+
+  .invoice-print-layout .products-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 15px;
+    font-size: 11pt;
+  }
+
+  .invoice-print-layout .products-table th,
+  .invoice-print-layout .products-table td {
+    border: 1px solid #000;
+    padding: 6px 8px;
+    text-align: left;
+  }
+
+  .invoice-print-layout .products-table th {
+    background: #f0f0f0 !important;
+    font-weight: bold;
+    text-align: center;
+  }
+
+  .invoice-print-layout .products-table td.text-center {
+    text-align: center;
+  }
+
+  .invoice-print-layout .products-table td.text-right {
+    text-align: right;
+  }
+
+  .invoice-print-layout .summary-section {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 20px;
+  }
+
+  .invoice-print-layout .summary-table {
+    width: 280px;
+  }
+
+  .invoice-print-layout .summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+    border-bottom: 1px dashed #ccc;
+  }
+
+  .invoice-print-layout .summary-row.total {
+    font-weight: bold;
+    font-size: 13pt;
+    border-bottom: 2px solid #000;
+    border-top: 1px solid #000;
+    padding: 8px 0;
+  }
+
+  .invoice-print-layout .summary-row.debt {
+    font-weight: bold;
+    font-size: 12pt;
+  }
+
+  .invoice-print-layout .signatures {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 40px;
+    text-align: center;
+  }
+
+  .invoice-print-layout .signature-box {
+    width: 45%;
+  }
+
+  .invoice-print-layout .signature-title {
+    font-weight: bold;
+    margin-bottom: 60px;
+  }
+
+  .invoice-print-layout .signature-name {
+    border-top: 1px dashed #000;
+    padding-top: 5px;
+  }
+
+  .invoice-print-layout .invoice-footer {
+    text-align: center;
+    margin-top: 30px;
+    font-size: 10pt;
+    font-style: italic;
+    color: #666;
+  }
+
+  .invoice-print-layout .invoice-note {
+    margin-top: 15px;
+    padding: 10px;
+    border: 1px dashed #ccc;
+    font-style: italic;
+  }
+
+  .invoice-print-layout .invoice-note-title {
+    font-weight: bold;
+    font-style: normal;
+  }
+
+  /* Page break settings */
+  @page {
+    size: A4;
+    margin: 10mm;
   }
 }
 

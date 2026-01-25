@@ -129,18 +129,6 @@ const Login = () => {
               </Button>
             </Form.Item>
           </Form>
-
-          <div className="login-credentials">
-            <p>
-              <strong>Tài khoản demo:</strong>
-            </p>
-            <p style={{ marginTop: 8 }}>
-              Email: <code>admin@buynow.com</code>
-            </p>
-            <p style={{ marginTop: 4 }}>
-              Mật khẩu: <code>123456</code>
-            </p>
-          </div>
         </div>
       </div>
 
