@@ -22,22 +22,35 @@ const { Header, Sider, Content } = Layout
 const { useBreakpoint } = Grid
 
 const getMenuItems = (userRole) => {
-  const baseItems = [
+  const isManager = ['ADMIN', 'MANAGER'].includes(userRole)
+
+  const items = [
     { key: '/', icon: <DashboardOutlined />, label: 'Tổng quan' },
     { key: '/customers', icon: <UserOutlined />, label: 'Khách hàng' },
-    { key: '/products', icon: <ShoppingOutlined />, label: 'Sản phẩm' },
+  ]
+
+  // Products - only for ADMIN and MANAGER
+  if (isManager) {
+    items.push({ key: '/products', icon: <ShoppingOutlined />, label: 'Sản phẩm' })
+  }
+
+  items.push(
     { key: '/orders', icon: <ShoppingCartOutlined />, label: 'Đơn hàng' },
     { key: '/stock', icon: <DatabaseOutlined />, label: 'Tồn kho' },
     { key: '/payments', icon: <DollarOutlined />, label: 'Thanh toán' },
-    { key: '/reports/employee', icon: <BarChartOutlined />, label: 'Doanh thu NV' },
-  ]
+  )
 
-  // Only show user management for ADMIN
-  if (userRole === 'ADMIN') {
-    baseItems.push({ key: '/users', icon: <TeamOutlined />, label: 'Tài khoản' })
+  // Reports - only for ADMIN and MANAGER
+  if (isManager) {
+    items.push({ key: '/reports/employee', icon: <BarChartOutlined />, label: 'Doanh thu NV' })
   }
 
-  return baseItems
+  // User management - only for ADMIN
+  if (userRole === 'ADMIN') {
+    items.push({ key: '/users', icon: <TeamOutlined />, label: 'Tài khoản' })
+  }
+
+  return items
 }
 
 // Get active menu key based on current path

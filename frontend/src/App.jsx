@@ -43,6 +43,17 @@ const AdminRoute = ({ children }) => {
   return children
 }
 
+// Manager Route component (ADMIN + MANAGER only)
+const ManagerRoute = ({ children }) => {
+  const user = useAuthStore((state) => state.user)
+
+  if (!['ADMIN', 'MANAGER'].includes(user?.role)) {
+    return <Navigate to="/" replace />
+  }
+
+  return children
+}
+
 function App() {
   return (
     <BrowserRouter>
@@ -62,10 +73,10 @@ function App() {
           <Route path="customers/create" element={<CustomerForm />} />
           <Route path="customers/:id" element={<CustomerDetail />} />
           <Route path="customers/:id/edit" element={<CustomerForm />} />
-          <Route path="products" element={<ProductList />} />
-          <Route path="products/create" element={<ProductForm />} />
-          <Route path="products/:id" element={<ProductDetail />} />
-          <Route path="products/:id/edit" element={<ProductForm />} />
+          <Route path="products" element={<ManagerRoute><ProductList /></ManagerRoute>} />
+          <Route path="products/create" element={<ManagerRoute><ProductForm /></ManagerRoute>} />
+          <Route path="products/:id" element={<ManagerRoute><ProductDetail /></ManagerRoute>} />
+          <Route path="products/:id/edit" element={<ManagerRoute><ProductForm /></ManagerRoute>} />
           <Route path="orders" element={<OrderList />} />
           <Route path="orders/create" element={<OrderCreate />} />
           <Route path="orders/:id" element={<OrderDetail />} />
