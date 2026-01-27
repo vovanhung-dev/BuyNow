@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { Card, Button, Typography, message, Grid, Tag, Spin } from 'antd'
 import { ArrowLeftOutlined, EditOutlined, WarningOutlined } from '@ant-design/icons'
 import { productsAPI } from '../../services/api'
+import { useAuthStore } from '../../store'
 
 const { Title } = Typography
 const { useBreakpoint } = Grid
@@ -14,6 +15,8 @@ const ProductDetail = () => {
   const isMobile = !screens.md
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
+  const { user } = useAuthStore()
+  const isAdmin = user?.role === 'ADMIN'
 
   useEffect(() => {
     loadProduct()
@@ -143,9 +146,28 @@ const ProductDetail = () => {
           </div>
         </div>
 
+        {/* Import Price - Only for ADMIN */}
+        {isAdmin && (
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: 11, color: '#d46b08', marginBottom: 12 }}>Giá nhập (Chỉ Admin)</div>
+            <div style={{
+              padding: 16,
+              background: '#fff7e6',
+              border: '1px solid #ffd591',
+              borderRadius: 8,
+              textAlign: 'center',
+            }}>
+              <div style={{ fontSize: 11, color: '#d46b08', marginBottom: 4 }}>Giá nhập hàng</div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: '#d46b08' }}>
+                {formatPrice(product.importPrice)}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Price Grid */}
         <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 11, color: '#788492', marginBottom: 12 }}>Bảng giá</div>
+          <div style={{ fontSize: 11, color: '#788492', marginBottom: 12 }}>Bảng giá bán</div>
           <div style={{
             display: 'grid',
             gridTemplateColumns: '1fr 1fr',

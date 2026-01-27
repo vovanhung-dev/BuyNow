@@ -5,7 +5,7 @@ import {
 } from 'antd'
 import {
   PrinterOutlined, CheckOutlined, CloseOutlined, DollarOutlined, ArrowLeftOutlined,
-  ClockCircleOutlined, UserOutlined, PhoneOutlined, EnvironmentOutlined, RollbackOutlined, ShoppingCartOutlined, CreditCardOutlined, FileTextOutlined
+  ClockCircleOutlined, UserOutlined, PhoneOutlined, EnvironmentOutlined, RollbackOutlined, ShoppingCartOutlined, CreditCardOutlined, FileTextOutlined, CopyOutlined
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { ordersAPI, paymentsAPI, returnsAPI } from '../../services/api'
@@ -296,7 +296,12 @@ const OrderDetail = () => {
   const showPayment = debtAmount > 0 && order.status !== 'CANCELLED'
   const showCancel = ['PENDING', 'APPROVED'].includes(order.status)
   const showReturn = order.status === 'COMPLETED'
-  const hasActions = showApprove || showComplete || showPayment || showCancel || showReturn
+  const showCopy = order.status === 'CANCELLED'
+  const hasActions = showApprove || showComplete || showPayment || showCancel || showReturn || showCopy
+
+  const handleCopyOrder = () => {
+    navigate('/orders/create', { state: { copyFrom: id } })
+  }
 
   return (
     <div className="animate-fade-in" style={{
@@ -376,6 +381,11 @@ const OrderDetail = () => {
               {showReturn && (
                 <Button icon={<RollbackOutlined />} onClick={openReturnModal}>
                   Trả hàng
+                </Button>
+              )}
+              {showCopy && (
+                <Button icon={<CopyOutlined />} onClick={handleCopyOrder}>
+                  Sao chép đơn
                 </Button>
               )}
               <Button icon={<PrinterOutlined />} onClick={handlePrint}>
@@ -969,6 +979,11 @@ const OrderDetail = () => {
           {showReturn && (
             <Button style={{ flex: 1, height: 44 }} onClick={openReturnModal}>
               <RollbackOutlined /> Trả hàng
+            </Button>
+          )}
+          {showCopy && (
+            <Button type="primary" style={{ flex: 1, height: 44 }} onClick={handleCopyOrder}>
+              <CopyOutlined /> Sao chép đơn
             </Button>
           )}
         </div>

@@ -8,6 +8,7 @@ const createSchema = z.object({
   sku: z.string().min(1, 'Mã SKU không được để trống'),
   name: z.string().min(1, 'Tên sản phẩm không được để trống'),
   unit: z.string().optional().nullable(),
+  importPrice: z.number().min(0).optional().default(0),
   wholesalePrice: z.number().min(0).optional().default(0),
   mediumDealerPrice: z.number().min(0).optional().default(0),
   largeDealerPrice: z.number().min(0).optional().default(0),

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { Card, Form, Input, InputNumber, Switch, Button, Typography, message, Grid } from 'antd'
 import { ArrowLeftOutlined, SaveOutlined } from '@ant-design/icons'
 import { productsAPI } from '../../services/api'
+import { useAuthStore } from '../../store'
 
 const { Title } = Typography
 const { useBreakpoint } = Grid
@@ -16,6 +17,8 @@ const ProductForm = () => {
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const isEdit = !!id
+  const { user } = useAuthStore()
+  const isAdmin = user?.role === 'ADMIN'
 
   useEffect(() => {
     if (isEdit) {
@@ -118,6 +121,7 @@ const ProductForm = () => {
           onFinish={handleSubmit}
           initialValues={{
             active: true,
+            importPrice: 0,
             wholesalePrice: 0,
             mediumDealerPrice: 0,
             largeDealerPrice: 0,
@@ -176,6 +180,22 @@ const ProductForm = () => {
             </Form.Item>
           </div>
 
+          {/* Import Price - Only for ADMIN */}
+          {isAdmin && (
+            <div style={{
+              background: isMobile ? '#fff7e6' : 'transparent',
+              padding: isMobile ? 16 : 0,
+              borderRadius: 12,
+              marginBottom: 16,
+              border: isMobile ? '1px solid #ffd591' : 'none',
+            }}>
+              <Title level={5} style={{ marginBottom: 16, fontSize: isMobile ? 15 : 16, color: '#d46b08' }}>
+                Giá nhập (Chỉ Admin)
+              </Title>
+              <PriceField name="importPrice" label="Giá nhập hàng" />
+            </div>
+          )}
+
           {/* Prices */}
           <div style={{
             background: isMobile ? '#f0f7ff' : 'transparent',
@@ -184,7 +204,7 @@ const ProductForm = () => {
             marginBottom: 16,
           }}>
             <Title level={5} style={{ marginBottom: 16, fontSize: isMobile ? 15 : 16 }}>
-              Bảng giá
+              Bảng giá bán
             </Title>
 
             <div style={{

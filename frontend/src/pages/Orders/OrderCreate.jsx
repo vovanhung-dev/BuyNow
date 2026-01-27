@@ -1,7 +1,7 @@
 import { useEffect, useState, memo, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import {
-  Form, Select, DatePicker, InputNumber, Input, Button, Table, Card, Space, message, Divider, Row, Col, Tag, Grid
+  Form, Select, DatePicker, InputNumber, Input, Button, Table, Card, Space, message, Divider, Row, Col, Tag, Grid, Modal
 } from 'antd'
 import {
   PlusOutlined,
@@ -15,7 +15,7 @@ import {
   TagOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
-import { customersAPI, productsAPI, ordersAPI } from '../../services/api'
+import { customersAPI, productsAPI, ordersAPI, customerGroupsAPI } from '../../services/api'
 
 const { useBreakpoint } = Grid
 
@@ -126,32 +126,145 @@ const OrderCreate = () => {
   const screens = useBreakpoint()
   const isMobile = !screens.md
   const navigate = useNavigate()
+  const location = useLocation()
   const [form] = Form.useForm()
+  const [customerForm] = Form.useForm()
+  const [productForm] = Form.useForm()
   const [customers, setCustomers] = useState([])
   const [products, setProducts] = useState([])
+  const [customerGroups, setCustomerGroups] = useState([])
   const [selectedCustomer, setSelectedCustomer] = useState(null)
   const [orderItems, setOrderItems] = useState([])
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
+  // Quick add modals
+  const [customerModalOpen, setCustomerModalOpen] = useState(false)
+  const [productModalOpen, setProductModalOpen] = useState(false)
+  const [customerSearchText, setCustomerSearchText] = useState('')
+  const [productSearchText, setProductSearchText] = useState('')
+  const [addingCustomer, setAddingCustomer] = useState(false)
+  const [addingProduct, setAddingProduct] = useState(false)
+  const [copyDataLoaded, setCopyDataLoaded] = useState(false)
+
   useEffect(() => {
     loadData()
   }, [])
 
+  // Load copy data after customers and products are loaded (only once)
+  useEffect(() => {
+    if (location.state?.copyFrom && customers.length > 0 && products.length > 0 && !copyDataLoaded) {
+      setCopyDataLoaded(true)
+      loadCopyData(location.state.copyFrom)
+    }
+  }, [customers, products, location.state?.copyFrom, copyDataLoaded])
+
   const loadData = async () => {
     setLoading(true)
     try {
-      const [customersRes, productsRes] = await Promise.all([
+      const [customersRes, productsRes, groupsRes] = await Promise.all([
         customersAPI.getAll({ limit: 1000 }),
         productsAPI.getAll({ limit: 1000, active: 'true' }),
+        customerGroupsAPI.getAll(),
       ])
       setCustomers(customersRes.data || [])
       setProducts(productsRes.data || [])
+      setCustomerGroups(groupsRes.data || [])
     } catch (error) {
       message.error('Lỗi tải dữ liệu')
     } finally {
       setLoading(false)
     }
+  }
+
+  // Load copy data from cancelled order
+  const loadCopyData = async (orderId) => {
+    try {
+      const res = await ordersAPI.getById(orderId)
+      const order = res.data
+      if (order) {
+        // Set customer
+        form.setFieldsValue({ customerId: order.customerId })
+        const customer = customers.find(c => c.id === order.customerId)
+        setSelectedCustomer(customer || { id: order.customerId, name: order.customerName, customerGroup: null })
+
+        // Set items
+        const items = order.items.map(item => ({
+          productId: item.productId,
+          sku: item.product?.sku || '',
+          name: item.productName,
+          unit: item.unit,
+          quantity: item.quantity,
+          unitPrice: Number(item.unitPrice),
+          total: Number(item.total),
+          note: item.note || '',
+        }))
+        setOrderItems(items)
+        message.success('Đã sao chép dữ liệu từ đơn hàng')
+      }
+    } catch (error) {
+      message.error('Lỗi sao chép đơn hàng')
+    }
+  }
+
+  // Quick add customer
+  const handleAddCustomer = async () => {
+    try {
+      const values = await customerForm.validateFields()
+      setAddingCustomer(true)
+
+      const res = await customersAPI.create(values)
+      if (res.success) {
+        message.success('Thêm khách hàng thành công')
+        setCustomers(prev => [res.data, ...prev])
+        form.setFieldsValue({ customerId: res.data.id })
+        handleCustomerChange(res.data.id)
+        setCustomerModalOpen(false)
+        customerForm.resetFields()
+      }
+    } catch (error) {
+      message.error(error.message || 'Lỗi thêm khách hàng')
+    } finally {
+      setAddingCustomer(false)
+    }
+  }
+
+  // Quick add product
+  const handleAddProduct = async () => {
+    try {
+      const values = await productForm.validateFields()
+      setAddingProduct(true)
+
+      const res = await productsAPI.create({
+        ...values,
+        stock: 0,
+        minStock: 10,
+        active: true,
+      })
+      if (res.success) {
+        message.success('Thêm sản phẩm thành công')
+        setProducts(prev => [res.data, ...prev])
+        handleAddProductToOrder(res.data.id)
+        setProductModalOpen(false)
+        productForm.resetFields()
+      }
+    } catch (error) {
+      message.error(error.message || 'Lỗi thêm sản phẩm')
+    } finally {
+      setAddingProduct(false)
+    }
+  }
+
+  // Open customer modal with search text
+  const openCustomerModal = () => {
+    customerForm.setFieldsValue({ name: customerSearchText })
+    setCustomerModalOpen(true)
+  }
+
+  // Open product modal with search text
+  const openProductModal = () => {
+    productForm.setFieldsValue({ name: productSearchText })
+    setProductModalOpen(true)
   }
 
   const handleCustomerChange = (customerId) => {
@@ -190,7 +303,7 @@ const OrderCreate = () => {
     return labels[priceType] || 'Giá bán lẻ'
   }
 
-  const handleAddProduct = (productId) => {
+  const handleAddProductToOrder = (productId) => {
     const product = products.find((p) => p.id === productId)
     if (!product) return
 
@@ -480,6 +593,7 @@ const OrderCreate = () => {
                   placeholder="Tìm khách hàng..."
                   optionFilterProp="label"
                   onChange={handleCustomerChange}
+                  onSearch={setCustomerSearchText}
                   loading={loading}
                   size="large"
                   filterOption={(input, option) =>
@@ -489,6 +603,20 @@ const OrderCreate = () => {
                     value: c.id,
                     label: `${c.name} - ${c.code}`,
                   }))}
+                  dropdownRender={(menu) => (
+                    <>
+                      {menu}
+                      <Divider style={{ margin: '8px 0' }} />
+                      <Button
+                        type="text"
+                        icon={<PlusOutlined />}
+                        onClick={openCustomerModal}
+                        style={{ width: '100%', textAlign: 'left', color: '#2a9299' }}
+                      >
+                        Thêm khách hàng mới
+                      </Button>
+                    </>
+                  )}
                 />
               </Form.Item>
 
@@ -552,7 +680,8 @@ const OrderCreate = () => {
               placeholder="+ Thêm sản phẩm..."
               style={{ width: '100%' }}
               optionFilterProp="label"
-              onChange={handleAddProduct}
+              onChange={handleAddProductToOrder}
+              onSearch={setProductSearchText}
               value={null}
               loading={loading}
               size="large"
@@ -564,6 +693,20 @@ const OrderCreate = () => {
                 value: p.id,
                 label: `${p.sku} - ${p.name}`,
               }))}
+              dropdownRender={(menu) => (
+                <>
+                  {menu}
+                  <Divider style={{ margin: '8px 0' }} />
+                  <Button
+                    type="text"
+                    icon={<PlusOutlined />}
+                    onClick={openProductModal}
+                    style={{ width: '100%', textAlign: 'left', color: '#2a9299' }}
+                  >
+                    Thêm sản phẩm mới
+                  </Button>
+                </>
+              )}
             />
           </div>
 
@@ -678,6 +821,7 @@ const OrderCreate = () => {
                         placeholder="Tìm và chọn khách hàng..."
                         optionFilterProp="label"
                         onChange={handleCustomerChange}
+                        onSearch={setCustomerSearchText}
                         loading={loading}
                         filterOption={(input, option) =>
                           (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
@@ -686,6 +830,20 @@ const OrderCreate = () => {
                           value: c.id,
                           label: `${c.name} - ${c.code}`,
                         }))}
+                        dropdownRender={(menu) => (
+                          <>
+                            {menu}
+                            <Divider style={{ margin: '8px 0' }} />
+                            <Button
+                              type="text"
+                              icon={<PlusOutlined />}
+                              onClick={openCustomerModal}
+                              style={{ width: '100%', textAlign: 'left', color: '#2a9299' }}
+                            >
+                              Thêm khách hàng mới
+                            </Button>
+                          </>
+                        )}
                       />
                     </Form.Item>
                   </Col>
@@ -782,7 +940,8 @@ const OrderCreate = () => {
                   placeholder="Tìm và thêm sản phẩm..."
                   style={{ width: '100%' }}
                   optionFilterProp="label"
-                  onChange={handleAddProduct}
+                  onChange={handleAddProductToOrder}
+                  onSearch={setProductSearchText}
                   value={null}
                   loading={loading}
                   size="large"
@@ -794,6 +953,20 @@ const OrderCreate = () => {
                     value: p.id,
                     label: `${p.sku} - ${p.name}`,
                   }))}
+                  dropdownRender={(menu) => (
+                    <>
+                      {menu}
+                      <Divider style={{ margin: '8px 0' }} />
+                      <Button
+                        type="text"
+                        icon={<PlusOutlined />}
+                        onClick={openProductModal}
+                        style={{ width: '100%', textAlign: 'left', color: '#2a9299' }}
+                      >
+                        Thêm sản phẩm mới
+                      </Button>
+                    </>
+                  )}
                 />
               </div>
 
@@ -990,8 +1163,161 @@ const OrderCreate = () => {
           </div>
         </div>
       )}
+
+      {/* Quick Add Modals */}
+      <QuickAddCustomerModal
+        open={customerModalOpen}
+        onCancel={() => setCustomerModalOpen(false)}
+        onOk={handleAddCustomer}
+        form={customerForm}
+        loading={addingCustomer}
+        customerGroups={customerGroups}
+      />
+      <QuickAddProductModal
+        open={productModalOpen}
+        onCancel={() => setProductModalOpen(false)}
+        onOk={handleAddProduct}
+        form={productForm}
+        loading={addingProduct}
+      />
     </div>
   )
 }
+
+// Quick Add Customer Modal
+const QuickAddCustomerModal = ({ open, onCancel, onOk, form, loading, customerGroups }) => (
+  <Modal
+    title="Thêm khách hàng mới"
+    open={open}
+    onCancel={onCancel}
+    onOk={onOk}
+    okText="Thêm"
+    cancelText="Hủy"
+    confirmLoading={loading}
+  >
+    <Form form={form} layout="vertical">
+      <Form.Item
+        name="name"
+        label="Tên khách hàng"
+        rules={[{ required: true, message: 'Nhập tên khách hàng' }]}
+      >
+        <Input placeholder="Tên khách hàng" />
+      </Form.Item>
+      <Row gutter={16}>
+        <Col span={12}>
+          <Form.Item name="phone" label="Số điện thoại">
+            <Input placeholder="0123456789" />
+          </Form.Item>
+        </Col>
+        <Col span={12}>
+          <Form.Item name="customerGroupId" label="Nhóm khách hàng">
+            <Select placeholder="Chọn nhóm" allowClear>
+              {customerGroups.map(g => (
+                <Select.Option key={g.id} value={g.id}>{g.name}</Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+        </Col>
+      </Row>
+      <Form.Item name="address" label="Địa chỉ">
+        <Input placeholder="Địa chỉ" />
+      </Form.Item>
+    </Form>
+  </Modal>
+)
+
+// Quick Add Product Modal
+const QuickAddProductModal = ({ open, onCancel, onOk, form, loading }) => (
+  <Modal
+    title="Thêm sản phẩm mới"
+    open={open}
+    onCancel={onCancel}
+    onOk={onOk}
+    okText="Thêm"
+    cancelText="Hủy"
+    confirmLoading={loading}
+    width={600}
+  >
+    <Form form={form} layout="vertical">
+      <Row gutter={16}>
+        <Col span={8}>
+          <Form.Item
+            name="sku"
+            label="Mã SKU"
+            rules={[{ required: true, message: 'Nhập mã SKU' }]}
+          >
+            <Input placeholder="VD: SP001" />
+          </Form.Item>
+        </Col>
+        <Col span={16}>
+          <Form.Item
+            name="name"
+            label="Tên sản phẩm"
+            rules={[{ required: true, message: 'Nhập tên sản phẩm' }]}
+          >
+            <Input placeholder="Tên sản phẩm" />
+          </Form.Item>
+        </Col>
+      </Row>
+      <Row gutter={16}>
+        <Col span={8}>
+          <Form.Item name="unit" label="Đơn vị tính">
+            <Input placeholder="VD: Thùng, Hộp" />
+          </Form.Item>
+        </Col>
+        <Col span={8}>
+          <Form.Item
+            name="retailPrice"
+            label="Giá bán lẻ"
+            rules={[{ required: true, message: 'Nhập giá' }]}
+          >
+            <InputNumber
+              min={0}
+              style={{ width: '100%' }}
+              formatter={v => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+              parser={v => v.replace(/,/g, '')}
+              placeholder="0"
+            />
+          </Form.Item>
+        </Col>
+        <Col span={8}>
+          <Form.Item name="wholesalePrice" label="Giá bán buôn">
+            <InputNumber
+              min={0}
+              style={{ width: '100%' }}
+              formatter={v => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+              parser={v => v.replace(/,/g, '')}
+              placeholder="0"
+            />
+          </Form.Item>
+        </Col>
+      </Row>
+      <Row gutter={16}>
+        <Col span={12}>
+          <Form.Item name="mediumDealerPrice" label="Giá đại lý vừa">
+            <InputNumber
+              min={0}
+              style={{ width: '100%' }}
+              formatter={v => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+              parser={v => v.replace(/,/g, '')}
+              placeholder="0"
+            />
+          </Form.Item>
+        </Col>
+        <Col span={12}>
+          <Form.Item name="largeDealerPrice" label="Giá đại lý lớn">
+            <InputNumber
+              min={0}
+              style={{ width: '100%' }}
+              formatter={v => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+              parser={v => v.replace(/,/g, '')}
+              placeholder="0"
+            />
+          </Form.Item>
+        </Col>
+      </Row>
+    </Form>
+  </Modal>
+)
 
 export default OrderCreate

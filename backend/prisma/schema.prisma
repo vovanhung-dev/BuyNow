@@ -83,6 +83,7 @@ model Product {
   sku               String   @unique @db.VarChar(50)
   name              String   @db.VarChar(255)
   unit              String?  @db.VarChar(50)
+  importPrice       Decimal  @default(0) @db.Decimal(15, 0)  // Giá nhập - chỉ ADMIN thấy
   wholesalePrice    Decimal  @default(0) @db.Decimal(15, 0)
   mediumDealerPrice Decimal  @default(0) @db.Decimal(15, 0)
   largeDealerPrice  Decimal  @default(0) @db.Decimal(15, 0)
