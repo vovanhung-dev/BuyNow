@@ -9,6 +9,7 @@ import {
   WarningOutlined
 } from '@ant-design/icons'
 import { productsAPI } from '../../services/api'
+import { useAuthStore } from '../../store'
 import PullToRefresh from '../../components/common/PullToRefresh'
 import LoadMoreButton from '../../components/common/LoadMoreButton'
 
@@ -23,6 +24,8 @@ const ProductList = () => {
   const [search, setSearch] = useState('')
   const [pagination, setPagination] = useState({ current: 1, pageSize: 20, total: 0 })
   const screens = useBreakpoint()
+  const { user } = useAuthStore()
+  const isAdmin = user?.role === 'ADMIN'
 
   const isMobile = !screens.md
 
@@ -106,6 +109,15 @@ const ProductList = () => {
     { title: 'SKU', dataIndex: 'sku', key: 'sku', width: 110, fixed: 'left' },
     { title: 'Tên sản phẩm', dataIndex: 'name', key: 'name', width: 200, fixed: 'left' },
     { title: 'ĐVT', dataIndex: 'unit', key: 'unit', width: 70, align: 'center' },
+    // Import price - only for ADMIN
+    ...(isAdmin ? [{
+      title: 'Giá nhập',
+      dataIndex: 'importPrice',
+      key: 'importPrice',
+      width: 120,
+      align: 'right',
+      render: (val) => <span style={{ color: '#d46b08', fontWeight: 500 }}>{formatPrice(val)}</span>,
+    }] : []),
     {
       title: 'Giá bán buôn',
       dataIndex: 'wholesalePrice',
@@ -200,6 +212,12 @@ const ProductList = () => {
         </Tag>
       </div>
       <div style={{ marginTop: 12, display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+        {isAdmin && (
+          <div>
+            <div style={{ fontSize: 11, color: '#d46b08' }}>Giá nhập</div>
+            <div style={{ fontWeight: 600, color: '#d46b08' }}>{formatPrice(product.importPrice)}</div>
+          </div>
+        )}
         <div>
           <div style={{ fontSize: 11, color: '#888' }}>Giá bán lẻ</div>
           <div style={{ fontWeight: 600, color: '#2a9299' }}>{formatPrice(product.retailPrice)}</div>
