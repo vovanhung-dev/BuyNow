@@ -42,11 +42,22 @@ const ProductForm = () => {
   const handleSubmit = async (values) => {
     setSaving(true)
     try {
+      // Convert all price fields to numbers
+      const data = {
+        ...values,
+        importPrice: Number(values.importPrice) || 0,
+        wholesalePrice: Number(values.wholesalePrice) || 0,
+        mediumDealerPrice: Number(values.mediumDealerPrice) || 0,
+        largeDealerPrice: Number(values.largeDealerPrice) || 0,
+        retailPrice: Number(values.retailPrice) || 0,
+        minStock: Number(values.minStock) || 0,
+      }
+
       if (isEdit) {
-        await productsAPI.update(id, values)
+        await productsAPI.update(id, data)
         message.success('Cập nhật sản phẩm thành công')
       } else {
-        await productsAPI.create(values)
+        await productsAPI.create(data)
         message.success('Thêm sản phẩm thành công')
       }
       navigate('/products')
@@ -58,7 +69,7 @@ const ProductForm = () => {
   }
 
   const priceFormatter = (val) => `${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-  const priceParser = (val) => val.replace(/\,/g, '')
+  const priceParser = (val) => Number(val.replace(/\,/g, '')) || 0
 
   // Price Input Component for Mobile
   const PriceField = ({ name, label }) => (

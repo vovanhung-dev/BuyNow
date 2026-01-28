@@ -237,6 +237,10 @@ const OrderCreate = () => {
 
       const res = await productsAPI.create({
         ...values,
+        retailPrice: Number(values.retailPrice) || 0,
+        wholesalePrice: Number(values.wholesalePrice) || 0,
+        mediumDealerPrice: Number(values.mediumDealerPrice) || 0,
+        largeDealerPrice: Number(values.largeDealerPrice) || 0,
         stock: 0,
         minStock: 10,
         active: true,
