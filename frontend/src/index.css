@@ -1181,6 +1181,40 @@ body {
     text-align: right;
   }
 
+  /* Column widths for print - make product name wider */
+  .invoice-print-layout .products-table th:nth-child(1),
+  .invoice-print-layout .products-table td:nth-child(1) {
+    width: 30px; /* STT */
+  }
+
+  .invoice-print-layout .products-table th:nth-child(2),
+  .invoice-print-layout .products-table td:nth-child(2) {
+    width: auto; /* Tên sản phẩm - takes remaining space */
+    min-width: 200px;
+  }
+
+  .invoice-print-layout .products-table th:nth-child(3),
+  .invoice-print-layout .products-table td:nth-child(3) {
+    width: 50px; /* ĐVT */
+  }
+
+  .invoice-print-layout .products-table th:nth-child(4),
+  .invoice-print-layout .products-table td:nth-child(4) {
+    width: 40px; /* SL */
+  }
+
+  .invoice-print-layout .products-table th:nth-child(5),
+  .invoice-print-layout .products-table td:nth-child(5) {
+    width: 90px; /* Đơn giá */
+    white-space: nowrap;
+  }
+
+  .invoice-print-layout .products-table th:nth-child(6),
+  .invoice-print-layout .products-table td:nth-child(6) {
+    width: 100px; /* Thành tiền */
+    white-space: nowrap;
+  }
+
   .invoice-print-layout .summary-section {
     display: flex;
     justify-content: flex-end;

@@ -146,6 +146,7 @@ const OrderCreate = () => {
   const [addingCustomer, setAddingCustomer] = useState(false)
   const [addingProduct, setAddingProduct] = useState(false)
   const [copyDataLoaded, setCopyDataLoaded] = useState(false)
+  const [selectedProductIds, setSelectedProductIds] = useState([])
 
   useEffect(() => {
     loadData()
@@ -332,6 +333,47 @@ const OrderCreate = () => {
         note: '',
       },
     ])
+  }
+
+  // Add multiple products at once
+  const handleAddMultipleProducts = () => {
+    if (selectedProductIds.length === 0) return
+
+    const priceType = selectedCustomer?.customerGroup?.priceType || 'RETAIL'
+    const newItems = []
+    let skipped = 0
+
+    selectedProductIds.forEach(productId => {
+      // Skip if already in order
+      if (orderItems.find((item) => item.productId === productId)) {
+        skipped++
+        return
+      }
+
+      const product = products.find((p) => p.id === productId)
+      if (!product) return
+
+      const unitPrice = getPrice(product, priceType)
+      newItems.push({
+        productId: product.id,
+        sku: product.sku,
+        name: product.name,
+        unit: product.unit,
+        quantity: 1,
+        unitPrice,
+        total: unitPrice,
+        note: '',
+      })
+    })
+
+    if (newItems.length > 0) {
+      setOrderItems([...orderItems, ...newItems])
+      message.success(`Đã thêm ${newItems.length} sản phẩm`)
+    }
+    if (skipped > 0) {
+      message.warning(`Bỏ qua ${skipped} sản phẩm đã có trong đơn`)
+    }
+    setSelectedProductIds([])
   }
 
   const handleQuantityChange = useCallback((index, quantity) => {
@@ -670,7 +712,7 @@ const OrderCreate = () => {
             </Form>
           </Card>
 
-          {/* Product Search - Prominent */}
+          {/* Product Search - Multi-select */}
           <div style={{
             position: 'sticky',
             top: 0,
@@ -679,39 +721,53 @@ const OrderCreate = () => {
             padding: '8px 0',
             marginBottom: 8,
           }}>
-            <Select
-              showSearch
-              placeholder="+ Thêm sản phẩm..."
-              style={{ width: '100%' }}
-              optionFilterProp="label"
-              onChange={handleAddProductToOrder}
-              onSearch={setProductSearchText}
-              value={null}
-              loading={loading}
-              size="large"
-              filterOption={(input, option) =>
-                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-              }
-              suffixIcon={<PlusOutlined style={{ color: '#2a9299', fontSize: 18 }} />}
-              options={products.map((p) => ({
-                value: p.id,
-                label: `${p.sku} - ${p.name}`,
-              }))}
-              dropdownRender={(menu) => (
-                <>
-                  {menu}
-                  <Divider style={{ margin: '8px 0' }} />
-                  <Button
-                    type="text"
-                    icon={<PlusOutlined />}
-                    onClick={openProductModal}
-                    style={{ width: '100%', textAlign: 'left', color: '#2a9299' }}
-                  >
-                    Thêm sản phẩm mới
-                  </Button>
-                </>
-              )}
-            />
+            <div style={{ display: 'flex', gap: 8 }}>
+              <Select
+                mode="multiple"
+                showSearch
+                placeholder="Chọn sản phẩm..."
+                style={{ flex: 1 }}
+                optionFilterProp="label"
+                value={selectedProductIds}
+                onChange={setSelectedProductIds}
+                onSearch={setProductSearchText}
+                loading={loading}
+                size="large"
+                maxTagCount={2}
+                maxTagPlaceholder={(omitted) => `+${omitted.length}`}
+                filterOption={(input, option) =>
+                  (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                }
+                options={products
+                  .filter(p => !orderItems.find(item => item.productId === p.id))
+                  .map((p) => ({
+                    value: p.id,
+                    label: `${p.sku} - ${p.name}`,
+                  }))}
+                dropdownRender={(menu) => (
+                  <>
+                    {menu}
+                    <Divider style={{ margin: '8px 0' }} />
+                    <Button
+                      type="text"
+                      icon={<PlusOutlined />}
+                      onClick={openProductModal}
+                      style={{ width: '100%', textAlign: 'left', color: '#2a9299' }}
+                    >
+                      Thêm sản phẩm mới
+                    </Button>
+                  </>
+                )}
+              />
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={handleAddMultipleProducts}
+                disabled={selectedProductIds.length === 0}
+                size="large"
+                style={{ minWidth: 50 }}
+              />
+            </div>
           </div>
 
           {/* Products List */}
@@ -938,25 +994,29 @@ const OrderCreate = () => {
                 </Space>
               }
             >
-              <div style={{ marginBottom: 16 }}>
+              <div style={{ marginBottom: 16, display: 'flex', gap: 12 }}>
                 <Select
+                  mode="multiple"
                   showSearch
-                  placeholder="Tìm và thêm sản phẩm..."
-                  style={{ width: '100%' }}
+                  placeholder="Chọn nhiều sản phẩm cùng lúc..."
+                  style={{ flex: 1 }}
                   optionFilterProp="label"
-                  onChange={handleAddProductToOrder}
+                  value={selectedProductIds}
+                  onChange={setSelectedProductIds}
                   onSearch={setProductSearchText}
-                  value={null}
                   loading={loading}
                   size="large"
+                  maxTagCount={3}
+                  maxTagPlaceholder={(omitted) => `+${omitted.length} sản phẩm`}
                   filterOption={(input, option) =>
                     (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
                   }
-                  suffixIcon={<PlusOutlined style={{ color: '#2a9299' }} />}
-                  options={products.map((p) => ({
-                    value: p.id,
-                    label: `${p.sku} - ${p.name}`,
-                  }))}
+                  options={products
+                    .filter(p => !orderItems.find(item => item.productId === p.id))
+                    .map((p) => ({
+                      value: p.id,
+                      label: `${p.sku} - ${p.name}`,
+                    }))}
                   dropdownRender={(menu) => (
                     <>
                       {menu}
@@ -972,6 +1032,15 @@ const OrderCreate = () => {
                     </>
                   )}
                 />
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={handleAddMultipleProducts}
+                  disabled={selectedProductIds.length === 0}
+                  size="large"
+                >
+                  Thêm ({selectedProductIds.length})
+                </Button>
               </div>
 
               {orderItems.length === 0 ? (
