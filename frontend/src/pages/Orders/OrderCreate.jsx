@@ -15,7 +15,8 @@ import {
   TagOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
-import { customersAPI, productsAPI, ordersAPI, customerGroupsAPI } from '../../services/api'
+import { customersAPI, productsAPI, ordersAPI, customerGroupsAPI, usersAPI } from '../../services/api'
+import { useAuthStore } from '../../store'
 
 const { useBreakpoint } = Grid
 
@@ -127,12 +128,15 @@ const OrderCreate = () => {
   const isMobile = !screens.md
   const navigate = useNavigate()
   const location = useLocation()
+  const { user } = useAuthStore()
+  const isAdminOrManager = user?.role === 'ADMIN' || user?.role === 'MANAGER'
   const [form] = Form.useForm()
   const [customerForm] = Form.useForm()
   const [productForm] = Form.useForm()
   const [customers, setCustomers] = useState([])
   const [products, setProducts] = useState([])
   const [customerGroups, setCustomerGroups] = useState([])
+  const [users, setUsers] = useState([])
   const [selectedCustomer, setSelectedCustomer] = useState(null)
   const [orderItems, setOrderItems] = useState([])
   const [loading, setLoading] = useState(false)
@@ -163,14 +167,22 @@ const OrderCreate = () => {
   const loadData = async () => {
     setLoading(true)
     try {
-      const [customersRes, productsRes, groupsRes] = await Promise.all([
+      const promises = [
         customersAPI.getAll({ limit: 1000 }),
         productsAPI.getAll({ limit: 1000, active: 'true' }),
         customerGroupsAPI.getAll(),
-      ])
-      setCustomers(customersRes.data || [])
-      setProducts(productsRes.data || [])
-      setCustomerGroups(groupsRes.data || [])
+      ]
+      // Admin/Manager can see and select employees
+      if (isAdminOrManager) {
+        promises.push(usersAPI.getAll({ limit: 100 }))
+      }
+      const results = await Promise.all(promises)
+      setCustomers(results[0].data || [])
+      setProducts(results[1].data || [])
+      setCustomerGroups(results[2].data || [])
+      if (isAdminOrManager && results[3]) {
+        setUsers(results[3].data || [])
+      }
     } catch (error) {
       message.error('Lỗi tải dữ liệu')
     } finally {
@@ -184,8 +196,12 @@ const OrderCreate = () => {
       const res = await ordersAPI.getById(orderId)
       const order = res.data
       if (order) {
-        // Set customer
-        form.setFieldsValue({ customerId: order.customerId })
+        // Set customer and userId (for admin to keep same employee)
+        const formValues = { customerId: order.customerId }
+        if (isAdminOrManager && order.userId) {
+          formValues.userId = order.userId
+        }
+        form.setFieldsValue(formValues)
         const customer = customers.find(c => c.id === order.customerId)
         setSelectedCustomer(customer || { id: order.customerId, name: order.customerName, customerGroup: null })
 
@@ -430,7 +446,7 @@ const OrderCreate = () => {
 
       setSubmitting(true)
 
-      const res = await ordersAPI.create({
+      const orderData = {
         customerId: values.customerId,
         orderDate: values.orderDate?.format('YYYY-MM-DD'),
         items: orderItems.map((item) => ({
@@ -442,7 +458,12 @@ const OrderCreate = () => {
         discount: totals.discount,
         paidAmount: totals.paidAmount,
         note: values.note,
-      })
+      }
+      // Admin/Manager can specify sales employee
+      if (isAdminOrManager && values.userId) {
+        orderData.userId = values.userId
+      }
+      const res = await ordersAPI.create(orderData)
 
       message.success('Tạo đơn hàng thành công!')
       navigate(`/orders/${res.data.id}`)
@@ -666,6 +687,30 @@ const OrderCreate = () => {
                   )}
                 />
               </Form.Item>
+
+              {/* Employee Select - Only for Admin/Manager */}
+              {isAdminOrManager && (
+                <Form.Item
+                  name="userId"
+                  label={<span style={{ fontWeight: 500 }}>👤 Nhân viên bán</span>}
+                  style={{ marginBottom: selectedCustomer ? 12 : 0 }}
+                >
+                  <Select
+                    showSearch
+                    allowClear
+                    placeholder="Mặc định: bạn"
+                    optionFilterProp="label"
+                    size="large"
+                    filterOption={(input, option) =>
+                      (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                    }
+                    options={users.map((u) => ({
+                      value: u.id,
+                      label: `${u.name}${u.id === user?.id ? ' (Bạn)' : ''}`,
+                    }))}
+                  />
+                </Form.Item>
+              )}
 
               {selectedCustomer && (
                 <div style={{
@@ -921,6 +966,32 @@ const OrderCreate = () => {
                     </Form.Item>
                   </Col>
                 </Row>
+
+                {/* Employee Select - Only for Admin/Manager */}
+                {isAdminOrManager && (
+                  <Row gutter={24} style={{ marginTop: 16 }}>
+                    <Col xs={24} md={12}>
+                      <Form.Item
+                        name="userId"
+                        label="Nhân viên bán"
+                      >
+                        <Select
+                          showSearch
+                          allowClear
+                          placeholder="Mặc định: bạn (người đang đăng nhập)"
+                          optionFilterProp="label"
+                          filterOption={(input, option) =>
+                            (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                          }
+                          options={users.map((u) => ({
+                            value: u.id,
+                            label: `${u.name}${u.id === user?.id ? ' (Bạn)' : ''}`,
+                          }))}
+                        />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                )}
 
                 {selectedCustomer && (
                   <div style={{

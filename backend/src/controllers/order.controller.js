@@ -19,6 +19,7 @@ const createSchema = z.object({
   discount: z.number().min(0).optional().default(0),
   paidAmount: z.number().min(0).optional().default(0),
   note: z.string().optional().nullable(),
+  userId: z.string().optional(), // Admin can specify sales employee
 });
 
 const updateStatusSchema = z.object({
@@ -251,6 +252,12 @@ const create = async (req, res) => {
     // Generate order code
     const code = generateOrderCode();
 
+    // Determine userId: Admin/Manager can specify, otherwise use current user
+    let orderUserId = req.user.id;
+    if (data.userId && (req.user.role === 'ADMIN' || req.user.role === 'MANAGER')) {
+      orderUserId = data.userId;
+    }
+
     // Create order with items in transaction
     const order = await prisma.$transaction(async (tx) => {
       // Create order
@@ -262,7 +269,7 @@ const create = async (req, res) => {
           customerName: customer.name,
           customerPhone: customer.phone,
           customerAddress: customer.address,
-          userId: req.user.id,
+          userId: orderUserId,
           priceType,
           subtotal,
           discount,
