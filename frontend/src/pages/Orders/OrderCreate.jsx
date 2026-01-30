@@ -276,7 +276,7 @@ const OrderCreate = () => {
     const customer = customers.find((c) => c.id === customerId)
     setSelectedCustomer(customer)
     if (orderItems.length > 0) {
-      const priceType = customer?.customerGroup?.priceType || 'RETAIL'
+      const priceType = customer?.customerGroup?.priceType || 'WHOLESALE'
       const newItems = orderItems.map((item) => {
         const product = products.find((p) => p.id === item.productId)
         if (product) {
@@ -294,7 +294,8 @@ const OrderCreate = () => {
       case 'WHOLESALE': return Number(product.wholesalePrice)
       case 'MEDIUM_DEALER': return Number(product.mediumDealerPrice)
       case 'LARGE_DEALER': return Number(product.largeDealerPrice)
-      default: return Number(product.retailPrice)
+      case 'RETAIL': return Number(product.retailPrice)
+      default: return Number(product.wholesalePrice)
     }
   }
 
@@ -305,7 +306,7 @@ const OrderCreate = () => {
       LARGE_DEALER: 'Giá đại lý lớn',
       RETAIL: 'Giá bán lẻ',
     }
-    return labels[priceType] || 'Giá bán lẻ'
+    return labels[priceType] || 'Giá bán buôn'
   }
 
   const handleAddProductToOrder = (productId) => {
@@ -317,7 +318,7 @@ const OrderCreate = () => {
       return
     }
 
-    const priceType = selectedCustomer?.customerGroup?.priceType || 'RETAIL'
+    const priceType = selectedCustomer?.customerGroup?.priceType || 'WHOLESALE'
     const unitPrice = getPrice(product, priceType)
 
     setOrderItems([
@@ -339,7 +340,7 @@ const OrderCreate = () => {
   const handleAddMultipleProducts = () => {
     if (selectedProductIds.length === 0) return
 
-    const priceType = selectedCustomer?.customerGroup?.priceType || 'RETAIL'
+    const priceType = selectedCustomer?.customerGroup?.priceType || 'WHOLESALE'
     const newItems = []
     let skipped = 0
 
