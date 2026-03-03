@@ -76,7 +76,9 @@ const OrderItemCard = ({ item, index, onQuantityChange, onPriceChange, onNoteCha
       <div style={{ flex: 1 }}>
         <div style={{ fontSize: 12, color: '#788492', marginBottom: 6 }}>Số lượng</div>
         <PriceInput
-          min={1}
+          min={0.5}
+          step={0.5}
+          precision={1}
           value={item.quantity}
           onChange={(v) => onQuantityChange(index, v)}
           style={{ width: '100%', height: 44 }}
@@ -394,7 +396,7 @@ const OrderCreate = () => {
   }
 
   const handleQuantityChange = useCallback((index, quantity) => {
-    const qty = quantity || 1
+    const qty = quantity || 0.5
     setOrderItems(prev => prev.map((item, i) =>
       i === index
         ? { ...item, quantity: qty, total: qty * item.unitPrice }
@@ -531,15 +533,17 @@ const OrderCreate = () => {
       title: 'Số lượng',
       dataIndex: 'quantity',
       key: 'quantity',
-      width: 100,
+      width: 110,
       render: (val, _, index) => (
         <InputNumber
-          min={1}
+          min={0.5}
+          step={0.5}
+          precision={1}
           value={val}
           onChange={(v) => handleQuantityChange(index, v)}
           size="small"
           style={{
-            width: 70,
+            width: 80,
             borderRadius: 8,
           }}
         />
@@ -771,11 +775,35 @@ const OrderCreate = () => {
               <Select
                 mode="multiple"
                 showSearch
-                placeholder="Chọn sản phẩm..."
+                placeholder="Chọn sản phẩm (chọn là thêm ngay)..."
                 style={{ flex: 1 }}
                 optionFilterProp="label"
                 value={selectedProductIds}
-                onChange={setSelectedProductIds}
+                onChange={(ids) => {
+                  // auto-add each newly selected product immediately
+                  const priceType = selectedCustomer?.customerGroup?.priceType || 'WHOLESALE'
+                  const newItems = []
+                  ids.forEach(productId => {
+                    if (orderItems.find(item => item.productId === productId)) return
+                    const product = products.find(p => p.id === productId)
+                    if (!product) return
+                    const unitPrice = getPrice(product, priceType)
+                    newItems.push({
+                      productId: product.id,
+                      sku: product.sku,
+                      name: product.name,
+                      unit: product.unit,
+                      quantity: 1,
+                      unitPrice,
+                      total: unitPrice,
+                      note: '',
+                    })
+                  })
+                  if (newItems.length > 0) {
+                    setOrderItems(prev => [...prev, ...newItems])
+                  }
+                  setSelectedProductIds([])
+                }}
                 onSearch={setProductSearchText}
                 loading={loading}
                 size="large"
@@ -804,14 +832,6 @@ const OrderCreate = () => {
                     </Button>
                   </>
                 )}
-              />
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={handleAddMultipleProducts}
-                disabled={selectedProductIds.length === 0}
-                size="large"
-                style={{ minWidth: 50 }}
               />
             </div>
           </div>
@@ -1070,11 +1090,34 @@ const OrderCreate = () => {
                 <Select
                   mode="multiple"
                   showSearch
-                  placeholder="Chọn nhiều sản phẩm cùng lúc..."
+                  placeholder="Chọn sản phẩm (chọn là thêm ngay)..."
                   style={{ flex: 1 }}
                   optionFilterProp="label"
                   value={selectedProductIds}
-                  onChange={setSelectedProductIds}
+                  onChange={(ids) => {
+                    const priceType = selectedCustomer?.customerGroup?.priceType || 'WHOLESALE'
+                    const newItems = []
+                    ids.forEach(productId => {
+                      if (orderItems.find(item => item.productId === productId)) return
+                      const product = products.find(p => p.id === productId)
+                      if (!product) return
+                      const unitPrice = getPrice(product, priceType)
+                      newItems.push({
+                        productId: product.id,
+                        sku: product.sku,
+                        name: product.name,
+                        unit: product.unit,
+                        quantity: 1,
+                        unitPrice,
+                        total: unitPrice,
+                        note: '',
+                      })
+                    })
+                    if (newItems.length > 0) {
+                      setOrderItems(prev => [...prev, ...newItems])
+                    }
+                    setSelectedProductIds([])
+                  }}
                   onSearch={setProductSearchText}
                   loading={loading}
                   size="large"
@@ -1104,15 +1147,6 @@ const OrderCreate = () => {
                     </>
                   )}
                 />
-                <Button
-                  type="primary"
-                  icon={<PlusOutlined />}
-                  onClick={handleAddMultipleProducts}
-                  disabled={selectedProductIds.length === 0}
-                  size="large"
-                >
-                  Thêm ({selectedProductIds.length})
-                </Button>
               </div>
 
               {orderItems.length === 0 ? (
