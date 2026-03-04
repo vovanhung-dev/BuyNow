@@ -79,6 +79,7 @@ const OrderItemCard = ({ item, index, onQuantityChange, onPriceChange, onNoteCha
           min={0.5}
           step={0.5}
           precision={1}
+          controls
           value={item.quantity}
           onChange={(v) => onQuantityChange(index, v)}
           style={{ width: '100%', height: 44 }}
@@ -539,6 +540,7 @@ const OrderCreate = () => {
           min={0.5}
           step={0.5}
           precision={1}
+          controls
           value={val}
           onChange={(v) => handleQuantityChange(index, v)}
           size="small"

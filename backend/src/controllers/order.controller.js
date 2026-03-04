@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 // Validation schemas
 const orderItemSchema = z.object({
   productId: z.string().min(1, 'Sản phẩm không được để trống'),
-  quantity: z.number().int().min(1, 'Số lượng phải lớn hơn 0'),
+  quantity: z.number().min(0.5, 'Số lượng phải lớn hơn 0'),
   unitPrice: z.number().min(0).optional(),
   note: z.string().optional().nullable(),
 });

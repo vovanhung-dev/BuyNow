@@ -153,7 +153,7 @@ model OrderItem {
   stt         Int
   productName String  @db.VarChar(255)
   unit        String? @db.VarChar(50)
-  quantity    Int
+  quantity    Decimal @db.Decimal(10, 2)
   unitPrice   Decimal @db.Decimal(15, 0)
   total       Decimal @db.Decimal(15, 0)
   note        String? @db.VarChar(500)
