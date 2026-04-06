@@ -12,6 +12,7 @@ import {
   ArrowRightOutlined,
   CalendarOutlined,
   TrophyOutlined,
+  DownloadOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { reportsAPI } from '../../services/api'
@@ -29,6 +30,7 @@ const RevenueByEmployee = () => {
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState([])
   const [summary, setSummary] = useState({})
+  const [exporting, setExporting] = useState(false)
   const [dateRange, setDateRange] = useState([
     dayjs().startOf('month'),
     dayjs().endOf('month')
@@ -66,6 +68,31 @@ const RevenueByEmployee = () => {
       params.set('endDate', dateRange[1].format('YYYY-MM-DD'))
     }
     navigate(`/reports/employee/${employee.id}?${params.toString()}`)
+  }
+
+  const handleExportExcel = async () => {
+    setExporting(true)
+    try {
+      const params = {}
+      if (dateRange && dateRange[0] && dateRange[1]) {
+        params.startDate = dateRange[0].format('YYYY-MM-DD')
+        params.endDate = dateRange[1].format('YYYY-MM-DD')
+      }
+      const res = await reportsAPI.exportEmployeeSalaryExcel(params)
+      const url = window.URL.createObjectURL(new Blob([res]))
+      const link = document.createElement('a')
+      link.href = url
+      const fileName = `Bao_cao_luong_${params.startDate || 'all'}_${params.endDate || 'all'}.xlsx`
+      link.setAttribute('download', fileName)
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Export error:', error)
+    } finally {
+      setExporting(false)
+    }
   }
 
   // Quick date presets
@@ -297,6 +324,16 @@ const RevenueByEmployee = () => {
             style={{ width: isMobile ? '100%' : 280 }}
             placeholder={['Từ ngày', 'Đến ngày']}
           />
+          <Button
+            type="primary"
+            icon={<DownloadOutlined />}
+            onClick={handleExportExcel}
+            loading={exporting}
+            disabled={data.length === 0 || loading}
+            style={{ background: '#22a06b', borderColor: '#22a06b', width: isMobile ? '100%' : 'auto' }}
+          >
+            Tải Excel tính lương
+          </Button>
         </Space>
       </div>
 

@@ -196,4 +196,260 @@ const getEmployeeOrders = async (req, res) => {
   }
 };
 
-module.exports = { getRevenueByEmployee, getEmployeeOrders };
+// Export Excel báo cáo tính lương nhân viên
+const exportEmployeeSalaryExcel = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const ExcelJS = require('exceljs');
+
+    // Build date filter
+    const dateFilter = {};
+    if (startDate) dateFilter.gte = new Date(startDate);
+    if (endDate) dateFilter.lte = new Date(endDate + 'T23:59:59');
+
+    const orderWhere = { status: { not: 'CANCELLED' } };
+    if (Object.keys(dateFilter).length > 0) orderWhere.orderDate = dateFilter;
+
+    // If SALES role, only show their own data
+    if (req.user.role === 'SALES') {
+      orderWhere.userId = req.user.id;
+    }
+
+    // Get all employees
+    const employees = await prisma.user.findMany({
+      where: {
+        active: true,
+        ...(req.user.role === 'SALES' ? { id: req.user.id } : {}),
+      },
+      select: { id: true, name: true, email: true, role: true, phone: true },
+      orderBy: { name: 'asc' },
+    });
+
+    // Get stats for each employee
+    const employeeStats = await Promise.all(
+      employees.map(async (employee) => {
+        const empOrderWhere = { ...orderWhere, userId: employee.id };
+        const orders = await prisma.order.findMany({
+          where: empOrderWhere,
+          select: { total: true, paidAmount: true, debtAmount: true },
+        });
+        const totalOrders = orders.length;
+        const totalRevenue = orders.reduce((sum, o) => sum + Number(o.total), 0);
+        const totalPaid = orders.reduce((sum, o) => sum + Number(o.paidAmount), 0);
+        const totalDebt = orders.reduce((sum, o) => sum + Number(o.debtAmount), 0);
+        return { ...employee, totalOrders, totalRevenue, totalPaid, totalDebt };
+      })
+    );
+
+    employeeStats.sort((a, b) => b.totalRevenue - a.totalRevenue);
+
+    // Create Excel workbook
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'BuyNow System';
+    const sheet = workbook.addWorksheet('Báo cáo lương nhân viên');
+
+    // Column widths
+    sheet.columns = [
+      { width: 6 },   // A - STT
+      { width: 28 },  // B - Tên NV
+      { width: 14 },  // C - Vai trò
+      { width: 14 },  // D - SĐT
+      { width: 12 },  // E - Số đơn
+      { width: 20 },  // F - Doanh thu
+      { width: 20 },  // G - Đã thu
+      { width: 20 },  // H - Còn nợ
+      { width: 20 },  // I - Hoa hồng
+      { width: 20 },  // J - Ghi chú
+    ];
+
+    const dateLabel = startDate && endDate
+      ? `Từ ${startDate.split('-').reverse().join('/')} đến ${endDate.split('-').reverse().join('/')}`
+      : 'Tất cả thời gian';
+
+    // === HEADER: Company Info ===
+    sheet.mergeCells('A1:J1');
+    const titleRow = sheet.getRow(1);
+    titleRow.getCell(1).value = 'NPP HÙNG THƯ';
+    titleRow.getCell(1).font = { bold: true, size: 16, color: { argb: 'FF134E52' } };
+    titleRow.getCell(1).alignment = { horizontal: 'center' };
+    titleRow.height = 28;
+
+    sheet.mergeCells('A2:J2');
+    const addrRow = sheet.getRow(2);
+    addrRow.getCell(1).value = 'ĐT: 0865.888.128 - 09.1234.1256 | Số nhà 29 đường Lưu Cơ, phố Kim Đa, TP Ninh Bình';
+    addrRow.getCell(1).font = { size: 10, color: { argb: 'FF666666' } };
+    addrRow.getCell(1).alignment = { horizontal: 'center' };
+
+    // Title
+    sheet.mergeCells('A4:J4');
+    const reportTitle = sheet.getRow(4);
+    reportTitle.getCell(1).value = 'BÁO CÁO DOANH THU NHÂN VIÊN - TÍNH LƯƠNG';
+    reportTitle.getCell(1).font = { bold: true, size: 14, color: { argb: 'FF2A9299' } };
+    reportTitle.getCell(1).alignment = { horizontal: 'center' };
+    reportTitle.height = 24;
+
+    sheet.mergeCells('A5:J5');
+    const dateRow = sheet.getRow(5);
+    dateRow.getCell(1).value = dateLabel;
+    dateRow.getCell(1).font = { italic: true, size: 11, color: { argb: 'FF888888' } };
+    dateRow.getCell(1).alignment = { horizontal: 'center' };
+
+    // === TABLE HEADER ===
+    const headerLabels = ['STT', 'Nhân viên', 'Vai trò', 'SĐT', 'Số đơn', 'Doanh thu', 'Đã thu', 'Còn nợ', 'Hoa hồng (2%)', 'Ghi chú'];
+    const headerRow = sheet.getRow(7);
+    headerRow.height = 22;
+    headerLabels.forEach((label, i) => {
+      const cell = headerRow.getCell(i + 1);
+      cell.value = label;
+      cell.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2A9299' } };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      cell.border = {
+        top: { style: 'thin' }, bottom: { style: 'thin' },
+        left: { style: 'thin' }, right: { style: 'thin' },
+      };
+    });
+
+    // === DATA ROWS ===
+    const roleLabels = { ADMIN: 'Admin', MANAGER: 'Quản lý', SALES: 'Nhân viên' };
+    let dataRowStart = 8;
+    const activeEmployees = employeeStats.filter(e => e.totalOrders > 0);
+
+    activeEmployees.forEach((emp, index) => {
+      const row = sheet.getRow(dataRowStart + index);
+      const commission = Math.round(emp.totalRevenue * 0.02);
+
+      row.getCell(1).value = index + 1;
+      row.getCell(1).alignment = { horizontal: 'center' };
+
+      row.getCell(2).value = emp.name;
+      row.getCell(2).font = { bold: true };
+
+      row.getCell(3).value = roleLabels[emp.role] || emp.role;
+      row.getCell(3).alignment = { horizontal: 'center' };
+
+      row.getCell(4).value = emp.phone || '';
+      row.getCell(4).alignment = { horizontal: 'center' };
+
+      row.getCell(5).value = emp.totalOrders;
+      row.getCell(5).alignment = { horizontal: 'center' };
+
+      row.getCell(6).value = emp.totalRevenue;
+      row.getCell(6).numFmt = '#,##0';
+      row.getCell(6).alignment = { horizontal: 'right' };
+
+      row.getCell(7).value = emp.totalPaid;
+      row.getCell(7).numFmt = '#,##0';
+      row.getCell(7).alignment = { horizontal: 'right' };
+
+      row.getCell(8).value = emp.totalDebt;
+      row.getCell(8).numFmt = '#,##0';
+      row.getCell(8).alignment = { horizontal: 'right' };
+      if (emp.totalDebt > 0) {
+        row.getCell(8).font = { color: { argb: 'FFDE350B' } };
+      }
+
+      row.getCell(9).value = commission;
+      row.getCell(9).numFmt = '#,##0';
+      row.getCell(9).alignment = { horizontal: 'right' };
+      row.getCell(9).font = { bold: true, color: { argb: 'FF22A06B' } };
+
+      row.getCell(10).value = '';
+
+      // Borders & alternating colors
+      for (let c = 1; c <= 10; c++) {
+        row.getCell(c).border = {
+          top: { style: 'thin' }, bottom: { style: 'thin' },
+          left: { style: 'thin' }, right: { style: 'thin' },
+        };
+        if (index % 2 === 1) {
+          row.getCell(c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5FAFA' } };
+        }
+      }
+    });
+
+    // === TOTAL ROW ===
+    const totalRowNum = dataRowStart + activeEmployees.length;
+    const totalRow = sheet.getRow(totalRowNum);
+    totalRow.height = 24;
+
+    totalRow.getCell(1).value = '';
+    totalRow.getCell(2).value = 'TỔNG CỘNG';
+    totalRow.getCell(2).font = { bold: true, size: 12 };
+
+    totalRow.getCell(5).value = activeEmployees.reduce((s, e) => s + e.totalOrders, 0);
+    totalRow.getCell(5).alignment = { horizontal: 'center' };
+    totalRow.getCell(5).font = { bold: true };
+
+    totalRow.getCell(6).value = activeEmployees.reduce((s, e) => s + e.totalRevenue, 0);
+    totalRow.getCell(6).numFmt = '#,##0';
+    totalRow.getCell(6).alignment = { horizontal: 'right' };
+    totalRow.getCell(6).font = { bold: true };
+
+    totalRow.getCell(7).value = activeEmployees.reduce((s, e) => s + e.totalPaid, 0);
+    totalRow.getCell(7).numFmt = '#,##0';
+    totalRow.getCell(7).alignment = { horizontal: 'right' };
+    totalRow.getCell(7).font = { bold: true };
+
+    totalRow.getCell(8).value = activeEmployees.reduce((s, e) => s + e.totalDebt, 0);
+    totalRow.getCell(8).numFmt = '#,##0';
+    totalRow.getCell(8).alignment = { horizontal: 'right' };
+    totalRow.getCell(8).font = { bold: true, color: { argb: 'FFDE350B' } };
+
+    const totalCommission = activeEmployees.reduce((s, e) => s + Math.round(e.totalRevenue * 0.02), 0);
+    totalRow.getCell(9).value = totalCommission;
+    totalRow.getCell(9).numFmt = '#,##0';
+    totalRow.getCell(9).alignment = { horizontal: 'right' };
+    totalRow.getCell(9).font = { bold: true, color: { argb: 'FF22A06B' } };
+
+    for (let c = 1; c <= 10; c++) {
+      totalRow.getCell(c).border = {
+        top: { style: 'medium' }, bottom: { style: 'medium' },
+        left: { style: 'thin' }, right: { style: 'thin' },
+      };
+      totalRow.getCell(c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEEF9FA' } };
+    }
+
+    // === SIGNATURE SECTION ===
+    const sigRowNum = totalRowNum + 3;
+    const sigDateStr = new Date().toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+    sheet.mergeCells(`G${sigRowNum}:J${sigRowNum}`);
+    sheet.getRow(sigRowNum).getCell(7).value = `Ngày ${sigDateStr}`;
+    sheet.getRow(sigRowNum).getCell(7).alignment = { horizontal: 'center' };
+    sheet.getRow(sigRowNum).getCell(7).font = { italic: true, size: 10 };
+
+    sheet.mergeCells(`A${sigRowNum + 1}:D${sigRowNum + 1}`);
+    sheet.getRow(sigRowNum + 1).getCell(1).value = 'Người lập bảng';
+    sheet.getRow(sigRowNum + 1).getCell(1).alignment = { horizontal: 'center' };
+    sheet.getRow(sigRowNum + 1).getCell(1).font = { bold: true, size: 11 };
+
+    sheet.mergeCells(`G${sigRowNum + 1}:J${sigRowNum + 1}`);
+    sheet.getRow(sigRowNum + 1).getCell(7).value = 'Giám đốc';
+    sheet.getRow(sigRowNum + 1).getCell(7).alignment = { horizontal: 'center' };
+    sheet.getRow(sigRowNum + 1).getCell(7).font = { bold: true, size: 11 };
+
+    sheet.mergeCells(`A${sigRowNum + 2}:D${sigRowNum + 2}`);
+    sheet.getRow(sigRowNum + 2).getCell(1).value = '(Ký, ghi rõ họ tên)';
+    sheet.getRow(sigRowNum + 2).getCell(1).alignment = { horizontal: 'center' };
+    sheet.getRow(sigRowNum + 2).getCell(1).font = { italic: true, size: 10, color: { argb: 'FF999999' } };
+
+    sheet.mergeCells(`G${sigRowNum + 2}:J${sigRowNum + 2}`);
+    sheet.getRow(sigRowNum + 2).getCell(7).value = '(Ký, ghi rõ họ tên)';
+    sheet.getRow(sigRowNum + 2).getCell(7).alignment = { horizontal: 'center' };
+    sheet.getRow(sigRowNum + 2).getCell(7).font = { italic: true, size: 10, color: { argb: 'FF999999' } };
+
+    // Write to response
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    const fileName = `Bao_cao_luong_${startDate || 'all'}_${endDate || 'all'}.xlsx`;
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    console.error('Export employee salary excel error:', error);
+    res.status(500).json({ success: false, message: 'Lỗi xuất Excel' });
+  }
+};
+
+module.exports = { getRevenueByEmployee, getEmployeeOrders, exportEmployeeSalaryExcel };
