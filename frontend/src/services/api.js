@@ -111,6 +111,7 @@ export const reportsAPI = {
   getByEmployee: (params) => api.get('/reports/by-employee', { params }),
   getEmployeeOrders: (id, params) => api.get(`/reports/by-employee/${id}`, { params }),
   exportEmployeeSalaryExcel: (params) => api.get('/reports/by-employee/export-excel', { params, responseType: 'blob' }),
+  exportSalesDetailExcel: (params) => api.get('/reports/by-employee/export-detail', { params, responseType: 'blob' }),
 }
 
 // Returns API

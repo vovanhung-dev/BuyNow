@@ -676,4 +676,195 @@ const exportEmployeeSalaryExcel = async (req, res) => {
   }
 };
 
-module.exports = { getRevenueByEmployee, getEmployeeOrders, exportEmployeeSalaryExcel };
+// Export Excel chi tiết phẳng (kiểu dòng đơn giản theo ngày)
+const exportSalesDetailFlatExcel = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const ExcelJS = require('exceljs');
+
+    const dateFilter = {};
+    if (startDate) dateFilter.gte = new Date(startDate);
+    if (endDate) dateFilter.lte = new Date(endDate + 'T23:59:59');
+
+    const orderWhere = { status: { not: 'CANCELLED' } };
+    if (Object.keys(dateFilter).length > 0) orderWhere.orderDate = dateFilter;
+
+    if (req.user.role === 'SALES') {
+      orderWhere.userId = req.user.id;
+    }
+
+    // Fetch all orders with items and returns
+    const orders = await prisma.order.findMany({
+      where: orderWhere,
+      include: {
+        items: {
+          include: { product: { select: { sku: true } } },
+        },
+        returns: prisma.orderReturn ? { include: { items: true } } : undefined,
+      },
+      orderBy: { orderDate: 'asc' },
+    });
+
+    // Build flat rows
+    const rows = [];
+    let totalReturnAmount = 0;
+    let totalNetRevenue = 0;
+    let totalDiscount = 0;
+
+    for (const order of orders) {
+      // Map orderItemId -> returned quantity
+      const returnedMap = new Map();
+      if (order.returns && order.returns.length > 0) {
+        for (const ret of order.returns) {
+          for (const ri of ret.items) {
+            const prev = returnedMap.get(ri.orderItemId) || 0;
+            returnedMap.set(ri.orderItemId, prev + Number(ri.quantity));
+          }
+        }
+      }
+
+      // Order discount allocated proportionally per line
+      const orderSubtotal = Number(order.subtotal) || 0;
+      const orderDiscount = Number(order.discount) || 0;
+
+      for (const item of order.items) {
+        const qty = Number(item.quantity);
+        const returnedQty = returnedMap.get(item.id) || 0;
+        const unitPrice = Number(item.unitPrice);
+        const lineTotal = qty * unitPrice;
+        const returnAmount = returnedQty * unitPrice; // tiền hàng trả lại (số dương)
+        const netRevenue = lineTotal - returnAmount;
+        // Allocate discount proportional to line total
+        const lineDiscount = orderSubtotal > 0
+          ? Math.round((lineTotal / orderSubtotal) * orderDiscount)
+          : 0;
+
+        rows.push({
+          date: order.orderDate,
+          customerName: order.customerName || '',
+          productName: item.productName || '',
+          sku: item.product?.sku || '',
+          returnAmount: returnAmount > 0 ? -returnAmount : 0, // hiển thị âm
+          netRevenue,
+          discount: lineDiscount,
+        });
+
+        totalReturnAmount += returnAmount > 0 ? -returnAmount : 0;
+        totalNetRevenue += netRevenue;
+        totalDiscount += lineDiscount;
+      }
+    }
+
+    // Create workbook
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'BuyNow System';
+    const sheet = workbook.addWorksheet('Chi tiết doanh thu');
+
+    sheet.columns = [
+      { width: 13 },  // A - Ngày
+      { width: 26 },  // B - Tên khách hàng
+      { width: 36 },  // C - Tên sản phẩm
+      { width: 15 },  // D - Mã SKU
+      { width: 18 },  // E - Tiền hàng trả lại
+      { width: 18 },  // F - Doanh thu thuần
+      { width: 15 },  // G - Chiết khấu
+    ];
+
+    // Row 1: Headers
+    const headers = ['Ngày', 'Tên khách hàng', 'Tên sản phẩm', 'Mã SKU', 'Tiền hàng trả lại', 'Doanh thu thuần', 'Chiết khấu'];
+    const headerRow = sheet.getRow(1);
+    headerRow.height = 24;
+    headers.forEach((label, i) => {
+      const cell = headerRow.getCell(i + 1);
+      cell.value = label;
+      cell.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2A9299' } };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      cell.border = {
+        top: { style: 'thin' }, bottom: { style: 'thin' },
+        left: { style: 'thin' }, right: { style: 'thin' },
+      };
+    });
+
+    // Row 2: Totals row
+    const totalRow = sheet.getRow(2);
+    totalRow.height = 22;
+    totalRow.getCell(5).value = totalReturnAmount;
+    totalRow.getCell(5).numFmt = '#,##0';
+    totalRow.getCell(5).font = { bold: true, color: { argb: 'FFDE350B' } };
+    totalRow.getCell(5).alignment = { horizontal: 'right' };
+
+    totalRow.getCell(6).value = totalNetRevenue;
+    totalRow.getCell(6).numFmt = '#,##0';
+    totalRow.getCell(6).font = { bold: true, color: { argb: 'FF134E52' } };
+    totalRow.getCell(6).alignment = { horizontal: 'right' };
+
+    totalRow.getCell(7).value = totalDiscount;
+    totalRow.getCell(7).numFmt = '#,##0';
+    totalRow.getCell(7).font = { bold: true };
+    totalRow.getCell(7).alignment = { horizontal: 'right' };
+
+    for (let c = 1; c <= 7; c++) {
+      totalRow.getCell(c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF7E6' } };
+      totalRow.getCell(c).border = {
+        top: { style: 'thin' }, bottom: { style: 'medium' },
+        left: { style: 'thin' }, right: { style: 'thin' },
+      };
+    }
+
+    // Data rows from row 3
+    rows.forEach((r, i) => {
+      const row = sheet.getRow(3 + i);
+      row.getCell(1).value = new Date(r.date).toLocaleDateString('vi-VN');
+      row.getCell(1).alignment = { horizontal: 'center' };
+
+      row.getCell(2).value = r.customerName;
+
+      row.getCell(3).value = r.productName;
+
+      row.getCell(4).value = r.sku;
+      row.getCell(4).alignment = { horizontal: 'center' };
+
+      if (r.returnAmount !== 0) {
+        row.getCell(5).value = r.returnAmount;
+        row.getCell(5).numFmt = '#,##0';
+        row.getCell(5).alignment = { horizontal: 'right' };
+        row.getCell(5).font = { color: { argb: 'FFDE350B' } };
+      }
+
+      row.getCell(6).value = r.netRevenue;
+      row.getCell(6).numFmt = '#,##0';
+      row.getCell(6).alignment = { horizontal: 'right' };
+
+      if (r.discount > 0) {
+        row.getCell(7).value = r.discount;
+        row.getCell(7).numFmt = '#,##0';
+        row.getCell(7).alignment = { horizontal: 'right' };
+      }
+
+      for (let c = 1; c <= 7; c++) {
+        row.getCell(c).border = {
+          top: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+          bottom: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+          left: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+          right: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+        };
+      }
+    });
+
+    // Freeze header + total row
+    sheet.views = [{ state: 'frozen', ySplit: 2 }];
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    const fileName = `Chi_tiet_doanh_thu_${startDate || 'all'}_${endDate || 'all'}.xlsx`;
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    console.error('Export sales detail flat excel error:', error);
+    res.status(500).json({ success: false, message: 'Lỗi xuất Excel' });
+  }
+};
+
+module.exports = { getRevenueByEmployee, getEmployeeOrders, exportEmployeeSalaryExcel, exportSalesDetailFlatExcel };

@@ -75,6 +75,7 @@ router.post('/stock/adjust', authMiddleware, requireRole('ADMIN', 'MANAGER'), st
 // ==================== REPORT ROUTES ====================
 router.get('/reports/by-employee', authMiddleware, reportController.getRevenueByEmployee);
 router.get('/reports/by-employee/export-excel', authMiddleware, reportController.exportEmployeeSalaryExcel);
+router.get('/reports/by-employee/export-detail', authMiddleware, reportController.exportSalesDetailFlatExcel);
 router.get('/reports/by-employee/:id', authMiddleware, reportController.getEmployeeOrders);
 
 // ==================== RETURN ROUTES ====================

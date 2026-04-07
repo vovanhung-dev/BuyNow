@@ -31,6 +31,7 @@ const RevenueByEmployee = () => {
   const [data, setData] = useState([])
   const [summary, setSummary] = useState({})
   const [exporting, setExporting] = useState(false)
+  const [exportingDetail, setExportingDetail] = useState(false)
   const [dateRange, setDateRange] = useState([
     dayjs().startOf('month'),
     dayjs().endOf('month')
@@ -92,6 +93,31 @@ const RevenueByEmployee = () => {
       console.error('Export error:', error)
     } finally {
       setExporting(false)
+    }
+  }
+
+  const handleExportDetailExcel = async () => {
+    setExportingDetail(true)
+    try {
+      const params = {}
+      if (dateRange && dateRange[0] && dateRange[1]) {
+        params.startDate = dateRange[0].format('YYYY-MM-DD')
+        params.endDate = dateRange[1].format('YYYY-MM-DD')
+      }
+      const res = await reportsAPI.exportSalesDetailExcel(params)
+      const url = window.URL.createObjectURL(new Blob([res]))
+      const link = document.createElement('a')
+      link.href = url
+      const fileName = `Chi_tiet_doanh_thu_${params.startDate || 'all'}_${params.endDate || 'all'}.xlsx`
+      link.setAttribute('download', fileName)
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Export detail error:', error)
+    } finally {
+      setExportingDetail(false)
     }
   }
 
@@ -333,6 +359,16 @@ const RevenueByEmployee = () => {
             style={{ background: '#22a06b', borderColor: '#22a06b', width: isMobile ? '100%' : 'auto' }}
           >
             Tải Excel tính lương
+          </Button>
+          <Button
+            type="primary"
+            icon={<DownloadOutlined />}
+            onClick={handleExportDetailExcel}
+            loading={exportingDetail}
+            disabled={data.length === 0 || loading}
+            style={{ background: '#2a9299', borderColor: '#2a9299', width: isMobile ? '100%' : 'auto' }}
+          >
+            Tải Excel chi tiết
           </Button>
         </Space>
       </div>
