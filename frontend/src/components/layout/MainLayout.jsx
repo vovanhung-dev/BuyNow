@@ -90,6 +90,10 @@ const MainLayout = () => {
   const activeMenuKey = getActiveMenuKey(location.pathname, menuItems)
   const bottomNavItems = menuItems.slice(0, 4)
 
+  // Ẩn thanh điều hướng dưới ở các trang form (có thanh nút lưu riêng)
+  const isFormPage = /\/(create|edit|import|adjust)(\/|$)/.test(location.pathname)
+  const showBottomNav = isMobile && !isFormPage
+
   // Close mobile menu when route changes
   useEffect(() => {
     setMobileMenuOpen(false)
@@ -187,7 +191,7 @@ const MainLayout = () => {
   )
 
   return (
-    <Layout style={{ minHeight: '100vh' }} className={isMobile ? 'has-bottom-nav' : ''}>
+    <Layout style={{ minHeight: '100vh' }} className={showBottomNav ? 'has-bottom-nav' : ''}>
       {/* Desktop/Tablet Sidebar */}
       {!isMobile && (
         <Sider
@@ -336,7 +340,7 @@ const MainLayout = () => {
       </Layout>
 
       {/* Bottom Navigation - Mobile */}
-      {isMobile && (
+      {showBottomNav && (
         <nav className="bottom-nav">
           {bottomNavItems.map((item) => (
             <button
