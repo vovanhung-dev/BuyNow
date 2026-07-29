@@ -283,6 +283,35 @@ const OrderList = () => {
           }}
         />
       )}
+
+      {/* Nút nổi tạo đơn - luôn hiện trên mobile */}
+      {isMobile && (
+        <button
+          type="button"
+          onClick={() => navigate('/orders/create')}
+          style={{
+            position: 'fixed',
+            right: 16,
+            bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))',
+            zIndex: 120,
+            height: 52,
+            padding: '0 22px',
+            border: 'none',
+            borderRadius: 26,
+            background: '#2a9299',
+            color: '#fff',
+            fontWeight: 600,
+            fontSize: 15,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            boxShadow: '0 6px 20px rgba(42,146,153,0.45)',
+            cursor: 'pointer',
+          }}
+        >
+          <PlusOutlined /> Tạo đơn
+        </button>
+      )}
     </div>
   )
 }
