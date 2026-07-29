@@ -20,7 +20,7 @@ const updateSchema = createSchema.partial();
 // Get all customers
 const getAll = async (req, res) => {
   try {
-    const { search, customerGroupId, page = 1, limit = 50 } = req.query;
+    const { search, customerGroupId, sortBy, sortOrder, page = 1, limit = 50 } = req.query;
 
     const where = {};
 
@@ -37,6 +37,13 @@ const getAll = async (req, res) => {
       where.customerGroupId = customerGroupId;
     }
 
+    let orderBy = { createdAt: 'desc' };
+    if (sortBy && sortOrder) {
+      const dir = sortOrder === 'ascend' ? 'asc' : 'desc';
+      if (sortBy === 'customerGroup') orderBy = { customerGroup: { name: dir } };
+      else if (['code', 'name', 'totalDebt', 'address'].includes(sortBy)) orderBy = { [sortBy]: dir };
+    }
+
     const [customers, total] = await Promise.all([
       prisma.customer.findMany({
         where,
@@ -45,7 +52,7 @@ const getAll = async (req, res) => {
             select: { id: true, code: true, name: true, priceType: true },
           },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         skip: (parseInt(page) - 1) * parseInt(limit),
         take: parseInt(limit),
       }),

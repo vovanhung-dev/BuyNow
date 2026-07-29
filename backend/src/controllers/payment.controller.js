@@ -15,7 +15,7 @@ const createSchema = z.object({
 // Get all payments
 const getAll = async (req, res) => {
   try {
-    const { customerId, orderId, startDate, endDate, page = 1, limit = 50 } = req.query;
+    const { customerId, orderId, startDate, endDate, sortBy, sortOrder, page = 1, limit = 50 } = req.query;
 
     const where = {};
 
@@ -37,6 +37,14 @@ const getAll = async (req, res) => {
       }
     }
 
+    let orderBy = { paymentDate: 'desc' };
+    if (sortBy && sortOrder) {
+      const dir = sortOrder === 'ascend' ? 'asc' : 'desc';
+      if (sortBy === 'order') orderBy = { order: { code: dir } };
+      else if (sortBy === 'customer') orderBy = { customer: { name: dir } };
+      else if (['paymentDate', 'amount', 'method'].includes(sortBy)) orderBy = { [sortBy]: dir };
+    }
+
     const [payments, total] = await Promise.all([
       prisma.payment.findMany({
         where,
@@ -48,7 +56,7 @@ const getAll = async (req, res) => {
             select: { id: true, code: true, name: true },
           },
         },
-        orderBy: { paymentDate: 'desc' },
+        orderBy,
         skip: (parseInt(page) - 1) * parseInt(limit),
         take: parseInt(limit),
       }),

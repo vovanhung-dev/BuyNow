@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Table, Button, Input, Space, message,
@@ -23,6 +23,7 @@ const ProductList = () => {
   const [loadingMore, setLoadingMore] = useState(false)
   const [search, setSearch] = useState('')
   const [pagination, setPagination] = useState({ current: 1, pageSize: 20, total: 0 })
+  const sortRef = useRef({ field: null, order: null })
   const screens = useBreakpoint()
   const { user } = useAuthStore()
   const isAdmin = user?.role === 'ADMIN'
@@ -43,11 +44,16 @@ const ProductList = () => {
     }
 
     try {
-      const res = await productsAPI.getAll({
+      const params = {
         search,
         page,
         limit: pagination.pageSize,
-      })
+      }
+      if (sortRef.current.field && sortRef.current.order) {
+        params.sortBy = sortRef.current.field
+        params.sortOrder = sortRef.current.order
+      }
+      const res = await productsAPI.getAll(params)
 
       const newData = res.data || []
 
@@ -296,14 +302,17 @@ const ProductList = () => {
           columns={columns}
           rowKey="id"
           loading={loading}
+          onChange={(pag, filters, sorter, extra) => {
+            const order = sorter && sorter.order ? sorter.order : null
+            sortRef.current = { field: order ? (sorter.field || sorter.columnKey) : null, order }
+            const targetPage = extra.action === 'sort' ? 1 : pag.current
+            setPagination(prev => ({ ...prev, current: targetPage, pageSize: pag.pageSize }))
+            loadProducts(targetPage, true)
+          }}
           pagination={{
             ...pagination,
             showSizeChanger: true,
             showTotal: (total) => `Tổng ${total} sản phẩm`,
-            onChange: (page, pageSize) => {
-              setPagination(prev => ({ ...prev, current: page, pageSize }))
-              loadProducts(page, true)
-            },
           }}
           scroll={{ x: 1200 }}
         />

@@ -102,7 +102,7 @@ const getAll = async (req, res) => {
             select: { items: true },
           },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         skip: (parseInt(page) - 1) * parseInt(limit),
         take: parseInt(limit),
       }),

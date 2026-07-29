@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Table, Button, Input, Space, message, Tag, Popconfirm, Row, Col, Card, Tooltip, Grid
@@ -26,6 +26,7 @@ const CustomerList = () => {
   const [loadingMore, setLoadingMore] = useState(false)
   const [search, setSearch] = useState('')
   const [pagination, setPagination] = useState({ current: 1, pageSize: 20, total: 0 })
+  const sortRef = useRef({ field: null, order: null })
   const screens = useBreakpoint()
 
   const isMobile = !screens.md
@@ -58,11 +59,16 @@ const CustomerList = () => {
     }
 
     try {
-      const res = await customersAPI.getAll({
+      const params = {
         search,
         page,
         limit: pagination.pageSize,
-      })
+      }
+      if (sortRef.current.field && sortRef.current.order) {
+        params.sortBy = sortRef.current.field
+        params.sortOrder = sortRef.current.order
+      }
+      const res = await customersAPI.getAll(params)
 
       const newData = res.data || []
 
@@ -394,6 +400,13 @@ const CustomerList = () => {
           columns={columns}
           rowKey="id"
           loading={loading}
+          onChange={(pag, filters, sorter, extra) => {
+            const order = sorter && sorter.order ? sorter.order : null
+            sortRef.current = { field: order ? (sorter.field || sorter.columnKey) : null, order }
+            const targetPage = extra.action === 'sort' ? 1 : pag.current
+            setPagination(prev => ({ ...prev, current: targetPage, pageSize: pag.pageSize }))
+            loadCustomers(targetPage, true)
+          }}
           pagination={{
             ...pagination,
             showSizeChanger: true,
@@ -402,10 +415,6 @@ const CustomerList = () => {
                 Hiển thị {range[0]}-{range[1]} / {total} khách hàng
               </span>
             ),
-            onChange: (page, pageSize) => {
-              setPagination(prev => ({ ...prev, current: page, pageSize }))
-              loadCustomers(page, true)
-            },
           }}
         />
       )}

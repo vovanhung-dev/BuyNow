@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { Table, DatePicker, Space, Typography, message, Tag, Card, Grid } from 'antd'
 import { ClockCircleOutlined, UserOutlined, FileTextOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
@@ -18,6 +18,7 @@ const PaymentList = () => {
   const [loadingMore, setLoadingMore] = useState(false)
   const [dateRange, setDateRange] = useState(null)
   const [pagination, setPagination] = useState({ current: 1, pageSize: 20, total: 0 })
+  const sortRef = useRef({ field: null, order: null })
 
   useEffect(() => {
     setPagination(prev => ({ ...prev, current: 1 }))
@@ -41,6 +42,11 @@ const PaymentList = () => {
       if (dateRange && dateRange[0] && dateRange[1]) {
         params.startDate = dateRange[0].format('YYYY-MM-DD')
         params.endDate = dateRange[1].format('YYYY-MM-DD')
+      }
+
+      if (sortRef.current.field && sortRef.current.order) {
+        params.sortBy = sortRef.current.field
+        params.sortOrder = sortRef.current.order
       }
 
       const res = await paymentsAPI.getAll(params)
@@ -231,14 +237,17 @@ const PaymentList = () => {
           columns={columns}
           rowKey="id"
           loading={loading}
+          onChange={(pag, filters, sorter, extra) => {
+            const order = sorter && sorter.order ? sorter.order : null
+            sortRef.current = { field: order ? (sorter.field || sorter.columnKey) : null, order }
+            const targetPage = extra.action === 'sort' ? 1 : pag.current
+            setPagination(prev => ({ ...prev, current: targetPage, pageSize: pag.pageSize }))
+            loadPayments(targetPage, true)
+          }}
           pagination={{
             ...pagination,
             showSizeChanger: true,
             showTotal: (total) => `Tổng ${total} giao dịch`,
-            onChange: (page, pageSize) => {
-              setPagination(prev => ({ ...prev, current: page, pageSize }))
-              loadPayments(page, true)
-            },
           }}
         />
       )}

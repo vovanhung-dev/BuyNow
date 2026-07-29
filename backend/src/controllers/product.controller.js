@@ -23,7 +23,7 @@ const updateSchema = createSchema.partial();
 // Get all products
 const getAll = async (req, res) => {
   try {
-    const { search, active, lowStock, page = 1, limit = 50 } = req.query;
+    const { search, active, lowStock, sortBy, sortOrder, page = 1, limit = 50 } = req.query;
 
     const where = {};
 
@@ -42,10 +42,18 @@ const getAll = async (req, res) => {
       where.stock = { lte: prisma.product.fields.minStock };
     }
 
+    let orderBy = { createdAt: 'desc' };
+    if (sortBy && sortOrder) {
+      const dir = sortOrder === 'ascend' ? 'asc' : 'desc';
+      if (['sku', 'name', 'unit', 'importPrice', 'wholesalePrice', 'mediumDealerPrice', 'largeDealerPrice', 'retailPrice', 'stock'].includes(sortBy)) {
+        orderBy = { [sortBy]: dir };
+      }
+    }
+
     const [products, total] = await Promise.all([
       prisma.product.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         skip: (parseInt(page) - 1) * parseInt(limit),
         take: parseInt(limit),
       }),
