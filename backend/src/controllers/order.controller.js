@@ -44,9 +44,19 @@ const getPriceByType = (product, priceType) => {
 // Get all orders
 const getAll = async (req, res) => {
   try {
-    const { search, status, customerId, startDate, endDate, page = 1, limit = 50 } = req.query;
+    const { search, status, customerId, startDate, endDate, sortBy, sortOrder, page = 1, limit = 50 } = req.query;
 
     const where = {};
+
+    // Sắp xếp phía server
+    let orderBy = { createdAt: 'desc' };
+    if (sortBy && sortOrder) {
+      const dir = sortOrder === 'ascend' ? 'asc' : 'desc';
+      if (sortBy === 'user') orderBy = { user: { name: dir } };
+      else if (['code', 'orderDate', 'customerName', 'total', 'debtAmount', 'status'].includes(sortBy)) {
+        orderBy = { [sortBy]: dir };
+      }
+    }
 
     // Nhân viên chỉ thấy đơn của mình
     if (req.user.role === 'SALES') {

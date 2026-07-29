@@ -283,17 +283,27 @@ body {
 }
 
 /* Select */
-.ant-select:not(.ant-select-customize-input) .ant-select-selector {
+.ant-select-single:not(.ant-select-customize-input) .ant-select-selector {
   border-radius: var(--radius-sm) !important;
   border-color: var(--neutral-200) !important;
   transition: all var(--transition-fast) !important;
-  padding: 4px 14px !important;
-  height: 42px !important;
+  padding: 0 14px !important;
+  height: 40px !important;
 }
 
 .ant-select-single .ant-select-selector .ant-select-selection-item,
 .ant-select-single .ant-select-selector .ant-select-selection-placeholder {
-  line-height: 32px !important;
+  line-height: 38px !important;
+}
+
+/* Select cỡ lớn (form mobile) cao hơn cho dễ bấm */
+.ant-select-single.ant-select-lg .ant-select-selector {
+  height: 48px !important;
+}
+
+.ant-select-single.ant-select-lg .ant-select-selector .ant-select-selection-item,
+.ant-select-single.ant-select-lg .ant-select-selector .ant-select-selection-placeholder {
+  line-height: 46px !important;
 }
 
 .ant-select:hover .ant-select-selector {
