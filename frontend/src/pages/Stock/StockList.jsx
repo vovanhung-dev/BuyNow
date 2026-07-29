@@ -142,14 +142,15 @@ const StockList = () => {
   }
 
   const columns = [
-    { title: 'SKU', dataIndex: 'sku', key: 'sku', width: 120 },
-    { title: 'Tên sản phẩm', dataIndex: 'name', key: 'name' },
-    { title: 'ĐVT', dataIndex: 'unit', key: 'unit', width: 80 },
+    { title: 'SKU', dataIndex: 'sku', key: 'sku', width: 120, sorter: (a, b) => (a.sku || '').localeCompare(b.sku || '') },
+    { title: 'Tên sản phẩm', dataIndex: 'name', key: 'name', sorter: (a, b) => (a.name || '').localeCompare(b.name || '', 'vi') },
+    { title: 'ĐVT', dataIndex: 'unit', key: 'unit', width: 80, sorter: (a, b) => (a.unit || '').localeCompare(b.unit || '', 'vi') },
     {
       title: 'Tồn kho',
       dataIndex: 'stock',
       key: 'stock',
       width: 100,
+      sorter: (a, b) => Number(a.stock) - Number(b.stock),
       render: (val, record) => (
         <Space>
           <span style={{
@@ -162,7 +163,7 @@ const StockList = () => {
         </Space>
       ),
     },
-    { title: 'Tối thiểu', dataIndex: 'minStock', key: 'minStock', width: 100 },
+    { title: 'Tối thiểu', dataIndex: 'minStock', key: 'minStock', width: 100, sorter: (a, b) => Number(a.minStock) - Number(b.minStock) },
     {
       title: 'Trạng thái',
       key: 'status',

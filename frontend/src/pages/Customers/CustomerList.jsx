@@ -185,6 +185,7 @@ const CustomerList = () => {
       dataIndex: 'code',
       key: 'code',
       width: 130,
+      sorter: (a, b) => (a.code || '').localeCompare(b.code || ''),
       render: (code) => (
         <span style={{
           fontFamily: 'monospace',
@@ -200,6 +201,7 @@ const CustomerList = () => {
       title: 'Tên khách hàng',
       dataIndex: 'name',
       key: 'name',
+      sorter: (a, b) => (a.name || '').localeCompare(b.name || '', 'vi'),
       render: (name, record) => (
         <div>
           <div style={{ fontWeight: 500, color: '#2d3640' }}>{name}</div>
@@ -217,6 +219,7 @@ const CustomerList = () => {
       dataIndex: 'customerGroup',
       key: 'customerGroup',
       width: 140,
+      sorter: (a, b) => (a.customerGroup?.name || '').localeCompare(b.customerGroup?.name || '', 'vi'),
       render: (group) => {
         if (!group) return <span style={{ color: '#98a4b3' }}>—</span>
         const color = getGroupColor(group.code)
@@ -253,6 +256,7 @@ const CustomerList = () => {
       key: 'totalDebt',
       width: 140,
       align: 'right',
+      sorter: (a, b) => Number(a.totalDebt) - Number(b.totalDebt),
       render: (val) => {
         const debt = Number(val)
         return (

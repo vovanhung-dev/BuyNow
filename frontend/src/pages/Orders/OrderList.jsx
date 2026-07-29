@@ -133,20 +133,22 @@ const OrderList = () => {
   )
 
   const columns = [
-    { title: 'Mã đơn', dataIndex: 'code', key: 'code', width: 140 },
+    { title: 'Mã đơn', dataIndex: 'code', key: 'code', width: 140, sorter: (a, b) => (a.code || '').localeCompare(b.code || '') },
     {
       title: 'Ngày',
       dataIndex: 'orderDate',
       key: 'orderDate',
       width: 100,
+      sorter: (a, b) => new Date(a.orderDate) - new Date(b.orderDate),
       render: (val) => dayjs(val).format('DD/MM/YYYY'),
     },
-    { title: 'Khách hàng', dataIndex: 'customerName', key: 'customerName' },
+    { title: 'Khách hàng', dataIndex: 'customerName', key: 'customerName', sorter: (a, b) => (a.customerName || '').localeCompare(b.customerName || '', 'vi') },
     {
       title: 'Nhân viên',
       dataIndex: 'user',
       key: 'user',
       width: 120,
+      sorter: (a, b) => (a.user?.name || '').localeCompare(b.user?.name || '', 'vi'),
       render: (user) => user?.name || '-',
     },
     {
@@ -154,6 +156,7 @@ const OrderList = () => {
       dataIndex: 'total',
       key: 'total',
       width: 120,
+      sorter: (a, b) => Number(a.total) - Number(b.total),
       render: formatPrice,
     },
     {
@@ -161,6 +164,7 @@ const OrderList = () => {
       dataIndex: 'debtAmount',
       key: 'debtAmount',
       width: 120,
+      sorter: (a, b) => Number(a.debtAmount) - Number(b.debtAmount),
       render: (val) => (
         <span style={{ color: Number(val) > 0 ? 'red' : 'green' }}>
           {formatPrice(val)}
@@ -172,6 +176,7 @@ const OrderList = () => {
       dataIndex: 'status',
       key: 'status',
       width: 110,
+      sorter: (a, b) => (a.status || '').localeCompare(b.status || ''),
       render: (val) => (
         <Tag color={statusConfig[val]?.color}>{statusConfig[val]?.label}</Tag>
       ),

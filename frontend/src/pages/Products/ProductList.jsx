@@ -106,9 +106,9 @@ const ProductList = () => {
   const formatPrice = (val) => Number(val).toLocaleString('vi-VN') + ' đ'
 
   const columns = [
-    { title: 'SKU', dataIndex: 'sku', key: 'sku', width: 110, fixed: 'left' },
-    { title: 'Tên sản phẩm', dataIndex: 'name', key: 'name', width: 200, fixed: 'left' },
-    { title: 'ĐVT', dataIndex: 'unit', key: 'unit', width: 70, align: 'center' },
+    { title: 'SKU', dataIndex: 'sku', key: 'sku', width: 110, fixed: 'left', sorter: (a, b) => (a.sku || '').localeCompare(b.sku || '') },
+    { title: 'Tên sản phẩm', dataIndex: 'name', key: 'name', width: 200, fixed: 'left', sorter: (a, b) => (a.name || '').localeCompare(b.name || '', 'vi') },
+    { title: 'ĐVT', dataIndex: 'unit', key: 'unit', width: 70, align: 'center', sorter: (a, b) => (a.unit || '').localeCompare(b.unit || '', 'vi') },
     // Import price - only for ADMIN
     ...(isAdmin ? [{
       title: 'Giá nhập',
@@ -116,6 +116,7 @@ const ProductList = () => {
       key: 'importPrice',
       width: 120,
       align: 'right',
+      sorter: (a, b) => Number(a.importPrice) - Number(b.importPrice),
       render: (val) => <span style={{ color: '#d46b08', fontWeight: 500 }}>{formatPrice(val)}</span>,
     }] : []),
     {
@@ -124,6 +125,7 @@ const ProductList = () => {
       key: 'wholesalePrice',
       width: 120,
       align: 'right',
+      sorter: (a, b) => Number(a.wholesalePrice) - Number(b.wholesalePrice),
       render: formatPrice,
     },
     {
@@ -132,6 +134,7 @@ const ProductList = () => {
       key: 'mediumDealerPrice',
       width: 120,
       align: 'right',
+      sorter: (a, b) => Number(a.mediumDealerPrice) - Number(b.mediumDealerPrice),
       render: formatPrice,
     },
     {
@@ -140,6 +143,7 @@ const ProductList = () => {
       key: 'largeDealerPrice',
       width: 120,
       align: 'right',
+      sorter: (a, b) => Number(a.largeDealerPrice) - Number(b.largeDealerPrice),
       render: formatPrice,
     },
     {
@@ -148,6 +152,7 @@ const ProductList = () => {
       key: 'retailPrice',
       width: 120,
       align: 'right',
+      sorter: (a, b) => Number(a.retailPrice) - Number(b.retailPrice),
       render: formatPrice,
     },
     {
@@ -156,6 +161,7 @@ const ProductList = () => {
       key: 'stock',
       width: 90,
       align: 'center',
+      sorter: (a, b) => Number(a.stock) - Number(b.stock),
       render: (val, record) => (
         <Space>
           <span style={{ color: val <= record.minStock ? 'red' : 'inherit', fontWeight: val <= record.minStock ? 'bold' : 'normal' }}>

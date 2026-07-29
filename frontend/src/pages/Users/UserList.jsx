@@ -177,6 +177,7 @@ const UserList = () => {
     {
       title: 'Tài khoản',
       key: 'user',
+      sorter: (a, b) => (a.name || '').localeCompare(b.name || '', 'vi'),
       render: (_, record) => (
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{
@@ -205,6 +206,7 @@ const UserList = () => {
       dataIndex: 'phone',
       key: 'phone',
       width: 120,
+      sorter: (a, b) => (a.phone || '').localeCompare(b.phone || ''),
       render: (val) => val || '-',
     },
     {
@@ -212,6 +214,7 @@ const UserList = () => {
       dataIndex: 'role',
       key: 'role',
       width: 130,
+      sorter: (a, b) => (a.role || '').localeCompare(b.role || ''),
       render: (val) => (
         <Tag color={roleConfig[val]?.color}>{roleConfig[val]?.label}</Tag>
       ),
@@ -221,6 +224,7 @@ const UserList = () => {
       dataIndex: 'active',
       key: 'active',
       width: 100,
+      sorter: (a, b) => (a.active === b.active ? 0 : a.active ? -1 : 1),
       render: (val) => (
         <Tag color={val ? 'green' : 'default'}>{val ? 'Hoạt động' : 'Khóa'}</Tag>
       ),

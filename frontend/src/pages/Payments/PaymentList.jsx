@@ -116,6 +116,7 @@ const PaymentList = () => {
       dataIndex: 'paymentDate',
       key: 'paymentDate',
       width: 150,
+      sorter: (a, b) => new Date(a.paymentDate) - new Date(b.paymentDate),
       render: (val) => dayjs(val).format('DD/MM/YYYY HH:mm'),
     },
     {
@@ -123,12 +124,14 @@ const PaymentList = () => {
       dataIndex: 'order',
       key: 'order',
       width: 140,
+      sorter: (a, b) => (a.order?.code || '').localeCompare(b.order?.code || ''),
       render: (order) => order?.code || '-',
     },
     {
       title: 'Khách hàng',
       dataIndex: 'customer',
       key: 'customer',
+      sorter: (a, b) => (a.customer?.name || '').localeCompare(b.customer?.name || '', 'vi'),
       render: (customer) => customer?.name || '-',
     },
     {
@@ -136,6 +139,7 @@ const PaymentList = () => {
       dataIndex: 'amount',
       key: 'amount',
       width: 150,
+      sorter: (a, b) => Number(a.amount) - Number(b.amount),
       render: (val) => <span style={{ color: 'green', fontWeight: 'bold' }}>{formatPrice(val)}</span>,
     },
     {
@@ -143,6 +147,7 @@ const PaymentList = () => {
       dataIndex: 'method',
       key: 'method',
       width: 120,
+      sorter: (a, b) => (a.method || '').localeCompare(b.method || ''),
       render: (val) => (
         <Tag color={val === 'CASH' ? 'green' : 'blue'}>
           {val === 'CASH' ? 'Tiền mặt' : 'Chuyển khoản'}
