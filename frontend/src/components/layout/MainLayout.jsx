@@ -90,9 +90,10 @@ const MainLayout = () => {
   const activeMenuKey = getActiveMenuKey(location.pathname, menuItems)
   const bottomNavItems = menuItems.slice(0, 4)
 
-  // Ẩn thanh điều hướng dưới ở các trang form (có thanh nút lưu riêng)
-  const isFormPage = /\/(create|edit|import|adjust)(\/|$)/.test(location.pathname)
-  const showBottomNav = isMobile && !isFormPage
+  // Chỉ hiện thanh điều hướng dưới ở các trang danh sách chính.
+  // Trang con (chi tiết, tạo, sửa) có thanh nút hành động riêng nên ẩn bottom nav để không che.
+  const listPagePaths = menuItems.map((item) => item.key)
+  const showBottomNav = isMobile && listPagePaths.includes(location.pathname)
 
   // Close mobile menu when route changes
   useEffect(() => {
