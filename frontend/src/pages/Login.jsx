@@ -1,9 +1,23 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Form, Input, Button, message } from 'antd'
-import { UserOutlined, LockOutlined, RightOutlined } from '@ant-design/icons'
+import {
+  UserOutlined,
+  LockOutlined,
+  RightOutlined,
+  ShoppingCartOutlined,
+  WalletOutlined,
+  BarChartOutlined,
+  CheckCircleFilled,
+} from '@ant-design/icons'
 import { authAPI } from '../services/api'
 import { useAuthStore } from '../store'
+
+const features = [
+  { icon: <ShoppingCartOutlined />, text: 'Tạo đơn hàng, in hóa đơn nhanh chóng' },
+  { icon: <WalletOutlined />, text: 'Theo dõi công nợ, thanh toán chính xác' },
+  { icon: <BarChartOutlined />, text: 'Báo cáo doanh thu theo từng nhân viên' },
+]
 
 const Login = () => {
   const [loading, setLoading] = useState(false)
@@ -31,14 +45,31 @@ const Login = () => {
       {/* Left Panel - Branding */}
       <div className="login-left">
         <div className="login-left-content">
-          <div className="login-logo">BuyNow</div>
-          <div className="login-logo-underline" />
-          <p className="login-tagline">Hệ thống Quản lý Bán hàng</p>
+          <div className="login-brand">
+            <span className="login-brand-mark">B</span>
+            <div>
+              <div className="login-brand-name">BuyNow</div>
+              <div className="login-brand-sub">Hệ thống Quản lý Bán hàng</div>
+            </div>
+          </div>
+
+          <h2 className="login-headline">
+            Giải pháp bán hàng<br />toàn diện cho doanh nghiệp
+          </h2>
           <p className="login-description">
-            Giải pháp toàn diện cho doanh nghiệp của bạn.
-            Quản lý đơn hàng, khách hàng, tồn kho và báo cáo doanh thu
-            một cách chuyên nghiệp và hiệu quả.
+            Quản lý đơn hàng, khách hàng, tồn kho và công nợ trên một nền tảng
+            duy nhất — nhanh, chính xác và chuyên nghiệp.
           </p>
+
+          <ul className="login-features">
+            {features.map((f, i) => (
+              <li key={i}>
+                <span className="login-feature-icon">{f.icon}</span>
+                <span>{f.text}</span>
+                <CheckCircleFilled className="login-feature-check" />
+              </li>
+            ))}
+          </ul>
 
           <div className="login-company">
             <p className="login-company-name">NPP HÙNG THƯ</p>
@@ -53,6 +84,11 @@ const Login = () => {
       {/* Right Panel - Login Form */}
       <div className="login-right">
         <div className="login-form-wrapper">
+          <div className="login-form-brand">
+            <span className="login-brand-mark">B</span>
+            <span className="login-form-brand-name">BuyNow</span>
+          </div>
+
           <h1 className="login-form-title">Chào mừng trở lại</h1>
           <p className="login-form-subtitle">
             Đăng nhập để tiếp tục sử dụng hệ thống
@@ -64,9 +100,11 @@ const Login = () => {
             autoComplete="off"
             layout="vertical"
             className="login-form"
+            requiredMark={false}
           >
             <Form.Item
               name="email"
+              label="Email đăng nhập"
               rules={[
                 { required: true, message: 'Vui lòng nhập email' },
                 { type: 'email', message: 'Email không hợp lệ' },
@@ -74,39 +112,41 @@ const Login = () => {
             >
               <Input
                 prefix={<UserOutlined style={{ color: '#98a4b3' }} />}
-                placeholder="Email đăng nhập"
+                placeholder="Nhập email"
+                size="large"
               />
             </Form.Item>
 
             <Form.Item
               name="password"
+              label="Mật khẩu"
               rules={[{ required: true, message: 'Vui lòng nhập mật khẩu' }]}
             >
               <Input.Password
                 prefix={<LockOutlined style={{ color: '#98a4b3' }} />}
-                placeholder="Mật khẩu"
+                placeholder="Nhập mật khẩu"
+                size="large"
               />
             </Form.Item>
 
-            <Form.Item style={{ marginBottom: 16 }}>
+            <Form.Item style={{ marginBottom: 0, marginTop: 28 }}>
               <Button
                 type="primary"
                 htmlType="submit"
                 loading={loading}
                 block
+                size="large"
                 icon={<RightOutlined />}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexDirection: 'row-reverse',
-                  gap: 8,
-                }}
+                iconPosition="end"
               >
                 Đăng nhập
               </Button>
             </Form.Item>
           </Form>
+
+          <p className="login-footer-note">
+            © NPP Hùng Thư · Hệ thống quản lý bán hàng nội bộ
+          </p>
         </div>
       </div>
     </div>

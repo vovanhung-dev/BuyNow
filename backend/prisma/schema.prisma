@@ -191,7 +191,7 @@ model StockLog {
   productId String
   product   Product   @relation(fields: [productId], references: [id])
   type      StockType
-  quantity  Int
+  quantity  Decimal   @db.Decimal(10, 2)
   beforeQty Int
   afterQty  Int
   orderId   String?   @db.VarChar(50)
@@ -244,7 +244,7 @@ model OrderReturnItem {
   productId     String
   productName   String      @db.VarChar(255)
   unit          String?     @db.VarChar(50)
-  quantity      Int
+  quantity      Decimal     @db.Decimal(10, 2)
   unitPrice     Decimal     @db.Decimal(15, 0)
   total         Decimal     @db.Decimal(15, 0)
 

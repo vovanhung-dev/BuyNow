@@ -483,7 +483,7 @@ const OrderCreate = () => {
     {
       title: 'STT',
       key: 'stt',
-      width: 60,
+      width: 52,
       align: 'center',
       render: (_, __, i) => (
         <span style={{
@@ -503,29 +503,22 @@ const OrderCreate = () => {
       ),
     },
     {
-      title: 'SKU',
-      dataIndex: 'sku',
-      key: 'sku',
-      width: 110,
-      render: (sku) => (
-        <span style={{ fontFamily: 'monospace', fontSize: 12, color: '#788492' }}>
-          {sku}
-        </span>
-      ),
-    },
-    {
       title: 'Tên sản phẩm',
       dataIndex: 'name',
       key: 'name',
-      render: (name) => (
-        <span style={{ fontWeight: 500, color: '#2d3640' }}>{name}</span>
+      width: 190,
+      render: (name, record) => (
+        <div>
+          <div style={{ fontWeight: 500, color: '#2d3640', lineHeight: 1.3 }}>{name}</div>
+          <div style={{ fontFamily: 'monospace', fontSize: 11, color: '#98a4b3' }}>{record.sku}</div>
+        </div>
       ),
     },
     {
       title: 'ĐVT',
       dataIndex: 'unit',
       key: 'unit',
-      width: 80,
+      width: 64,
       render: (unit) => (
         <Tag style={{ margin: 0 }}>{unit || '—'}</Tag>
       ),
@@ -534,7 +527,7 @@ const OrderCreate = () => {
       title: 'Số lượng',
       dataIndex: 'quantity',
       key: 'quantity',
-      width: 110,
+      width: 96,
       render: (val, _, index) => (
         <InputNumber
           min={0.5}
@@ -544,10 +537,7 @@ const OrderCreate = () => {
           value={val}
           onChange={(v) => handleQuantityChange(index, v)}
           size="small"
-          style={{
-            width: 80,
-            borderRadius: 8,
-          }}
+          style={{ width: '100%' }}
         />
       ),
     },
@@ -555,16 +545,17 @@ const OrderCreate = () => {
       title: 'Đơn giá',
       dataIndex: 'unitPrice',
       key: 'unitPrice',
-      width: 140,
+      width: 124,
       render: (val, _, index) => (
         <InputNumber
           min={0}
+          controls={false}
           value={val}
           onChange={(v) => handlePriceChange(index, v)}
           size="small"
           formatter={(v) => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
           parser={(v) => v.replace(/\,/g, '')}
-          style={{ width: 110 }}
+          style={{ width: '100%' }}
         />
       ),
     },
@@ -572,32 +563,18 @@ const OrderCreate = () => {
       title: 'Thành tiền',
       dataIndex: 'total',
       key: 'total',
-      width: 130,
+      width: 110,
       align: 'right',
       render: (val) => (
-        <span style={{ fontWeight: 600, color: '#2a9299' }}>
+        <span style={{ fontWeight: 600, color: '#2a9299', whiteSpace: 'nowrap' }}>
           {formatPrice(val)}
         </span>
       ),
     },
     {
-      title: 'Ghi chú',
-      dataIndex: 'note',
-      key: 'note',
-      width: 150,
-      render: (val, _, index) => (
-        <Input
-          placeholder="Ghi chú..."
-          value={val}
-          onChange={(e) => handleNoteChange(index, e.target.value)}
-          size="small"
-        />
-      ),
-    },
-    {
       title: '',
       key: 'action',
-      width: 50,
+      width: 44,
       render: (_, __, index) => (
         <Button
           type="text"
@@ -1017,7 +994,8 @@ const OrderCreate = () => {
 
                 {selectedCustomer && (
                   <div style={{
-                    background: 'linear-gradient(135deg, #eef9fa, #d4f0f2)',
+                    background: '#f5f9fa',
+                    border: '1px solid #e1e5ea',
                     padding: 20,
                     borderRadius: 12,
                     marginTop: 8,
@@ -1170,6 +1148,7 @@ const OrderCreate = () => {
                   rowKey="productId"
                   pagination={false}
                   size="middle"
+                  scroll={{ x: 680 }}
                 />
               )}
             </Card>

@@ -849,68 +849,152 @@ body {
 }
 
 .login-left {
-  flex: 1;
+  flex: 1.05;
   background: var(--primary-800);
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 48px;
+  padding: 64px;
   position: relative;
+  overflow: hidden;
+}
+
+/* Vòng trang trí mảnh (không tô đặc, không gradient nền) */
+.login-left::before,
+.login-left::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.06);
+}
+
+.login-left::before {
+  width: 420px;
+  height: 420px;
+  right: -120px;
+  top: -100px;
+}
+
+.login-left::after {
+  width: 300px;
+  height: 300px;
+  left: -110px;
+  bottom: -90px;
+  border-color: rgba(212, 168, 83, 0.12);
 }
 
 .login-left-content {
   position: relative;
   z-index: 1;
-  text-align: center;
   color: #fff;
-  max-width: 480px;
+  max-width: 460px;
 }
 
-.login-logo {
-  font-family: var(--font-display);
-  font-size: 56px;
-  font-weight: 800;
-  letter-spacing: -1.5px;
-  margin-bottom: 16px;
+.login-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 44px;
 }
 
-.login-logo-underline {
-  width: 64px;
-  height: 4px;
+.login-brand-mark {
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  border-radius: 14px;
   background: var(--gold-400);
-  margin: 0 auto 32px;
-  border-radius: 2px;
+  color: var(--primary-900);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 800;
 }
 
-.login-tagline {
-  font-size: 24px;
-  font-weight: 300;
-  opacity: 0.9;
+.login-brand-name {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  line-height: 1.1;
+}
+
+.login-brand-sub {
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+.login-headline {
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.5px;
   margin-bottom: 16px;
 }
 
 .login-description {
+  font-size: 15px;
+  opacity: 0.78;
+  line-height: 1.7;
+  margin-bottom: 32px;
+}
+
+.login-features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 44px;
+}
+
+.login-features li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 0;
+  font-size: 14.5px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.login-features li:last-child {
+  border-bottom: none;
+}
+
+.login-feature-icon {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 16px;
-  opacity: 0.7;
-  line-height: 1.8;
+  color: var(--gold-300);
+}
+
+.login-feature-check {
+  margin-left: auto;
+  color: var(--gold-400);
+  font-size: 15px;
 }
 
 .login-company {
-  margin-top: 48px;
-  padding-top: 32px;
+  padding-top: 28px;
   border-top: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .login-company-name {
-  font-weight: 600;
-  font-size: 18px;
+  font-weight: 700;
+  font-size: 16px;
   color: var(--gold-300);
-  margin-bottom: 8px;
+  margin-bottom: 6px;
+  letter-spacing: 0.5px;
 }
 
 .login-company-contact {
-  font-size: 14px;
-  opacity: 0.7;
+  font-size: 13px;
+  opacity: 0.65;
+  line-height: 1.6;
 }
 
 .login-right {
@@ -924,52 +1008,63 @@ body {
 
 .login-form-wrapper {
   width: 100%;
-  max-width: 420px;
+  max-width: 400px;
+}
+
+.login-form-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 40px;
+}
+
+.login-form-brand .login-brand-mark {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  background: var(--primary-500);
+  color: #fff;
+  font-size: 22px;
+}
+
+.login-form-brand-name {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--primary-800);
+  letter-spacing: -0.5px;
 }
 
 .login-form-title {
   font-family: var(--font-display);
-  font-size: 30px;
+  font-size: 28px;
   font-weight: 700;
   letter-spacing: -0.5px;
   color: var(--primary-900);
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .login-form-subtitle {
   color: var(--neutral-500);
   margin-bottom: 32px;
+  font-size: 14.5px;
 }
 
 .login-form .ant-form-item {
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .login-form .ant-btn-primary {
-  height: 48px !important;
+  height: 50px !important;
   font-size: 15px !important;
+  font-weight: 600 !important;
 }
 
-.login-credentials {
-  margin-top: 24px;
-  padding: 16px;
-  background: var(--neutral-50);
-  border-radius: var(--radius-md);
-  border: 1px dashed var(--neutral-300);
-}
-
-.login-credentials p {
-  margin: 0;
-  color: var(--neutral-600);
-  font-size: 13px;
-}
-
-.login-credentials code {
-  background: var(--primary-100);
-  color: var(--primary-700);
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 12px;
+.login-footer-note {
+  margin-top: 32px;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--neutral-400);
 }
 
 /* ================================================
@@ -1047,10 +1142,20 @@ body {
    ================================================ */
 
 .order-form .total-section {
-  background: var(--neutral-50);
-  border: 1px solid var(--neutral-200);
-  border-radius: var(--radius-lg);
-  padding: 24px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+}
+
+/* Bảng sản phẩm trong đơn: ô gọn để số hiển thị đủ */
+.order-form .ant-table-tbody > tr > td,
+.order-form .ant-table-thead > tr > th {
+  padding: 12px 8px !important;
+}
+
+.order-form .ant-table .ant-input-number-input {
+  padding: 4px 8px !important;
 }
 
 .order-form .total-row {
@@ -1073,17 +1178,19 @@ body {
 }
 
 .order-form .total-row.grand-total .label {
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--primary-800);
+  white-space: nowrap;
 }
 
 .order-form .total-row.grand-total .value {
   font-family: var(--font-display);
-  font-size: 26px;
+  font-size: 22px;
   font-weight: 800;
   color: var(--primary-600);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .order-form .debt-amount {

@@ -19,7 +19,7 @@ const returnItemSchema = z.object({
   productId: z.string().min(1),
   productName: z.string().min(1),
   unit: z.string().optional().nullable(),
-  quantity: z.number().int().min(1),
+  quantity: z.number().min(0.5),
   unitPrice: z.number().min(0),
 });
 
@@ -199,7 +199,7 @@ const create = async (req, res) => {
           message: `Không tìm thấy sản phẩm trong đơn hàng`,
         });
       }
-      if (item.quantity > orderItem.quantity) {
+      if (Number(item.quantity) > Number(orderItem.quantity)) {
         return res.status(400).json({
           success: false,
           message: `Số lượng trả của "${item.productName}" vượt quá số lượng đã mua`,
