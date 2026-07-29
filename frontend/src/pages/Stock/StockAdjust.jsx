@@ -163,7 +163,7 @@ const StockAdjust = () => {
             >
               <Form.Item
                 name="newQuantity"
-                label={<span style={{ fontWeight: 500, fontSize: 15 }}>Tồn kho mới <span style={{ color: '#ff4d4f' }}>*</span></span>}
+                label={<span style={{ fontWeight: 500, fontSize: 15 }}>Tồn kho mới</span>}
                 rules={[{ required: true, message: 'Vui lòng nhập số lượng' }]}
               >
                 <InputNumber

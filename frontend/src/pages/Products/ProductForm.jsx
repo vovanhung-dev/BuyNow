@@ -120,7 +120,7 @@ const ProductForm = () => {
       <Card
         loading={loading}
         style={{
-          maxWidth: isMobile ? '100%' : 700,
+          maxWidth: isMobile ? '100%' : 880,
           border: isMobile ? 'none' : undefined,
           boxShadow: isMobile ? 'none' : undefined,
         }}
@@ -159,7 +159,7 @@ const ProductForm = () => {
             }}>
               <Form.Item
                 name="sku"
-                label={<span style={{ fontWeight: 500 }}>Mã SKU <span style={{ color: '#ff4d4f' }}>*</span></span>}
+                label={<span style={{ fontWeight: 500 }}>Mã SKU</span>}
                 rules={[{ required: true, message: 'Vui lòng nhập mã SKU' }]}
               >
                 <Input
@@ -181,7 +181,7 @@ const ProductForm = () => {
 
             <Form.Item
               name="name"
-              label={<span style={{ fontWeight: 500 }}>Tên sản phẩm <span style={{ color: '#ff4d4f' }}>*</span></span>}
+              label={<span style={{ fontWeight: 500 }}>Tên sản phẩm</span>}
               rules={[{ required: true, message: 'Vui lòng nhập tên sản phẩm' }]}
             >
               <Input

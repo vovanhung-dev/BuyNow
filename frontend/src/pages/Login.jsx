@@ -48,28 +48,6 @@ const Login = () => {
             </p>
           </div>
         </div>
-
-        {/* Decorative Elements */}
-        <div style={{
-          position: 'absolute',
-          bottom: '10%',
-          left: '10%',
-          width: '200px',
-          height: '200px',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(212, 168, 83, 0.1) 0%, transparent 70%)',
-          animation: 'pulse 4s ease-in-out infinite',
-        }} />
-        <div style={{
-          position: 'absolute',
-          top: '15%',
-          right: '15%',
-          width: '150px',
-          height: '150px',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(62, 177, 184, 0.15) 0%, transparent 70%)',
-          animation: 'pulse 5s ease-in-out infinite 1s',
-        }} />
       </div>
 
       {/* Right Panel - Login Form */}
@@ -131,13 +109,6 @@ const Login = () => {
           </Form>
         </div>
       </div>
-
-      <style>{`
-        @keyframes pulse {
-          0%, 100% { transform: scale(1); opacity: 0.5; }
-          50% { transform: scale(1.1); opacity: 0.8; }
-        }
-      `}</style>
     </div>
   )
 }

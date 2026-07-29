@@ -9,6 +9,10 @@ import {
   ArrowRightOutlined,
   RiseOutlined,
   ClockCircleOutlined,
+  PlusOutlined,
+  DatabaseOutlined,
+  DollarOutlined,
+  BarChartOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { ordersAPI, customersAPI, productsAPI, stockAPI } from '../services/api'
@@ -247,39 +251,45 @@ const Dashboard = () => {
     </div>
   )
 
+  const isManager = ['ADMIN', 'MANAGER'].includes(user?.role)
+
+  const quickActions = [
+    { label: 'Tạo đơn hàng', desc: 'Lập hóa đơn bán hàng mới', icon: <PlusOutlined />, color: '#2a9299', bg: '#eef9fa', to: '/orders/create' },
+    { label: 'Khách hàng', desc: 'Danh sách và công nợ', icon: <UserOutlined />, color: '#0065ff', bg: '#e6f2ff', to: '/customers' },
+    ...(isManager ? [{ label: 'Sản phẩm', desc: 'Quản lý hàng hóa, giá bán', icon: <ShoppingOutlined />, color: '#22a06b', bg: '#dcf7e9', to: '/products' }] : []),
+    ...(isManager ? [{ label: 'Tồn kho', desc: 'Nhập kho, kiểm tồn', icon: <DatabaseOutlined />, color: '#e5a100', bg: '#fff7d6', to: '/stock' }] : []),
+    { label: 'Thanh toán', desc: 'Ghi nhận thu tiền', icon: <DollarOutlined />, color: '#7048e8', bg: '#f0ebff', to: '/payments' },
+    ...(isManager ? [{ label: 'Doanh thu NV', desc: 'Báo cáo theo nhân viên', icon: <BarChartOutlined />, color: '#e64980', bg: '#ffe8f1', to: '/reports/employee' }] : []),
+  ]
+
   return (
     <div className="animate-fade-in">
-      {/* Welcome Banner */}
-      <div className="dashboard-welcome" style={{ padding: isMobile ? '16px' : '24px 32px' }}>
-        <div style={{
-          display: 'flex',
-          flexDirection: isMobile ? 'column' : 'row',
-          justifyContent: 'space-between',
-          alignItems: isMobile ? 'flex-start' : 'center',
-          gap: 16,
-        }}>
-          <div>
-            <h2 style={{ margin: 0, fontSize: isMobile ? 18 : 24 }}>
-              {getGreeting()}, {user?.name}!
-            </h2>
-            <p style={{ margin: '8px 0 0', opacity: 0.9, fontSize: isMobile ? 13 : 14 }}>
-              {dayjs().format('dddd, DD/MM/YYYY')}
-            </p>
-          </div>
-          <Button
-            type="primary"
-            icon={<ShoppingCartOutlined />}
-            onClick={() => navigate('/orders/create')}
-            size={isMobile ? 'middle' : 'large'}
-            style={{
-              background: 'rgba(255,255,255,0.2)',
-              border: '1px solid rgba(255,255,255,0.3)',
-              width: isMobile ? '100%' : 'auto',
-            }}
-          >
-            Tạo đơn hàng
-          </Button>
+      {/* Page header */}
+      <div style={{
+        display: 'flex',
+        flexDirection: isMobile ? 'column' : 'row',
+        justifyContent: 'space-between',
+        alignItems: isMobile ? 'stretch' : 'center',
+        gap: 12,
+        marginBottom: 20,
+      }}>
+        <div>
+          <h1 className="page-title" style={{ margin: 0, fontSize: isMobile ? 20 : 26 }}>
+            {getGreeting()}, {user?.name}
+          </h1>
+          <p style={{ margin: '6px 0 0', color: '#788492', fontSize: isMobile ? 13 : 14 }}>
+            {dayjs().format('dddd, DD/MM/YYYY')} · Tổng quan hoạt động kinh doanh
+          </p>
         </div>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={() => navigate('/orders/create')}
+          size={isMobile ? 'middle' : 'large'}
+          style={{ width: isMobile ? '100%' : 'auto' }}
+        >
+          Tạo đơn hàng
+        </Button>
       </div>
 
       {/* Stats Cards */}
@@ -316,6 +326,24 @@ const Dashboard = () => {
             type="alerts"
           />
         </Col>
+      </Row>
+
+      {/* Quick Access */}
+      <div style={{ margin: '4px 0 12px', fontWeight: 600, fontSize: 15, color: '#2d3640' }}>
+        Truy cập nhanh
+      </div>
+      <Row gutter={[12, 12]} style={{ marginBottom: 20 }}>
+        {quickActions.map((action) => (
+          <Col xs={12} sm={8} lg={isManager ? 4 : 8} key={action.to}>
+            <div className="quick-action" onClick={() => navigate(action.to)}>
+              <div className="quick-action-icon" style={{ background: action.bg, color: action.color }}>
+                {action.icon}
+              </div>
+              <div className="quick-action-label">{action.label}</div>
+              <div className="quick-action-desc">{action.desc}</div>
+            </div>
+          </Col>
+        ))}
       </Row>
 
       {/* Content Grid */}

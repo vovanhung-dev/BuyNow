@@ -102,7 +102,7 @@ const UserForm = () => {
       <Card
         loading={loading}
         style={{
-          maxWidth: isMobile ? '100%' : 500,
+          maxWidth: isMobile ? '100%' : 720,
           border: isMobile ? 'none' : undefined,
           boxShadow: isMobile ? 'none' : undefined,
         }}
@@ -116,7 +116,7 @@ const UserForm = () => {
         >
           <Form.Item
             name="name"
-            label={<span style={{ fontWeight: 500 }}>Họ tên <span style={{ color: '#ff4d4f' }}>*</span></span>}
+            label={<span style={{ fontWeight: 500 }}>Họ tên</span>}
             rules={[{ required: true, message: 'Vui lòng nhập họ tên' }]}
           >
             <Input
@@ -128,7 +128,7 @@ const UserForm = () => {
 
           <Form.Item
             name="email"
-            label={<span style={{ fontWeight: 500 }}>Email <span style={{ color: '#ff4d4f' }}>*</span></span>}
+            label={<span style={{ fontWeight: 500 }}>Email</span>}
             rules={[
               { required: true, message: 'Vui lòng nhập email' },
               { type: 'email', message: 'Email không hợp lệ' },
@@ -148,7 +148,6 @@ const UserForm = () => {
             label={
               <span style={{ fontWeight: 500 }}>
                 {isEdit ? 'Mật khẩu mới' : 'Mật khẩu'}
-                {!isEdit && <span style={{ color: '#ff4d4f' }}> *</span>}
               </span>
             }
             rules={isEdit ? [] : [{ required: true, message: 'Vui lòng nhập mật khẩu' }]}
@@ -175,7 +174,7 @@ const UserForm = () => {
 
           <Form.Item
             name="role"
-            label={<span style={{ fontWeight: 500 }}>Vai trò <span style={{ color: '#ff4d4f' }}>*</span></span>}
+            label={<span style={{ fontWeight: 500 }}>Vai trò</span>}
             rules={[{ required: true, message: 'Vui lòng chọn vai trò' }]}
           >
             <Select

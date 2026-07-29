@@ -93,7 +93,7 @@ const StockImport = () => {
         >
           <Form.Item
             name="productId"
-            label={<span style={{ fontWeight: 500 }}>Chọn sản phẩm <span style={{ color: '#ff4d4f' }}>*</span></span>}
+            label={<span style={{ fontWeight: 500 }}>Chọn sản phẩm</span>}
             rules={[{ required: true, message: 'Vui lòng chọn sản phẩm' }]}
           >
             <Select
@@ -142,7 +142,7 @@ const StockImport = () => {
 
           <Form.Item
             name="quantity"
-            label={<span style={{ fontWeight: 500 }}>Số lượng nhập <span style={{ color: '#ff4d4f' }}>*</span></span>}
+            label={<span style={{ fontWeight: 500 }}>Số lượng nhập</span>}
             rules={[{ required: true, message: 'Vui lòng nhập số lượng' }]}
           >
             <InputNumber

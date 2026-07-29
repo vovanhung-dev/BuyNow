@@ -68,6 +68,17 @@ desktop.ini
 prisma/*.db
 prisma/*.db-journal
 
+# Backup & dump database
+backups/
+*.sql
+*.sql.gz
+
+# Screenshots & test artifacts
+screenshots/
+screenshot_*.png
+test-results/
+playwright-report/
+
 # Package lock files (optional - uncomment if you want to ignore)
 # package-lock.json
 # yarn.lock

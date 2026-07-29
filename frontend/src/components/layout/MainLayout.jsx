@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { Layout, Menu, Dropdown, Avatar, Badge, Drawer, Grid } from 'antd'
+import { Layout, Menu, Dropdown, Avatar, Drawer, Grid } from 'antd'
 import {
   DashboardOutlined,
   UserOutlined,
@@ -11,10 +11,10 @@ import {
   LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
-  BellOutlined,
   CloseOutlined,
   TeamOutlined,
   BarChartOutlined,
+  AppstoreOutlined,
 } from '@ant-design/icons'
 import { useAuthStore } from '../../store'
 
@@ -88,6 +88,7 @@ const MainLayout = () => {
   const isMobile = !screens.md
   const menuItems = getMenuItems(user?.role)
   const activeMenuKey = getActiveMenuKey(location.pathname, menuItems)
+  const bottomNavItems = menuItems.slice(0, 4)
 
   // Close mobile menu when route changes
   useEffect(() => {
@@ -162,15 +163,21 @@ const MainLayout = () => {
   // Sidebar content - reused for both desktop and mobile
   const SidebarContent = () => (
     <>
-      <div className="logo">
+      <div className="logo" style={{ justifyContent: (collapsed && !isMobile) ? 'center' : 'flex-start' }}>
         {(collapsed && !isMobile) ? (
-          <span className="logo-collapsed">BN</span>
+          <span className="logo-mark">B</span>
         ) : (
-          <span className="logo-text">BuyNow</span>
+          <>
+            <span className="logo-mark">B</span>
+            <span className="logo-info">
+              <span className="logo-text">BuyNow</span>
+              <span className="logo-sub">Hệ thống bán hàng</span>
+            </span>
+          </>
         )}
       </div>
       <Menu
-        theme="dark"
+        theme="light"
         mode="inline"
         selectedKeys={[activeMenuKey]}
         items={menuItems}
@@ -180,7 +187,7 @@ const MainLayout = () => {
   )
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
+    <Layout style={{ minHeight: '100vh' }} className={isMobile ? 'has-bottom-nav' : ''}>
       {/* Desktop/Tablet Sidebar */}
       {!isMobile && (
         <Sider
@@ -219,26 +226,26 @@ const MainLayout = () => {
         onClose={() => setMobileMenuOpen(false)}
         width={280}
         styles={{
-          body: { padding: 0, background: 'linear-gradient(180deg, #0d3b3e 0%, #134e52 100%)' },
+          body: { padding: 0, background: '#ffffff' },
           header: { display: 'none' },
         }}
         className="mobile-drawer"
       >
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '16px 20px',
-          borderBottom: '1px solid rgba(255,255,255,0.1)',
-        }}>
-          <span className="logo-text" style={{ margin: 0 }}>BuyNow</span>
+        <div className="logo" style={{ justifyContent: 'space-between', marginBottom: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span className="logo-mark">B</span>
+            <span className="logo-info">
+              <span className="logo-text">BuyNow</span>
+              <span className="logo-sub">Hệ thống bán hàng</span>
+            </span>
+          </div>
           <CloseOutlined
             onClick={() => setMobileMenuOpen(false)}
-            style={{ color: '#fff', fontSize: 18, cursor: 'pointer' }}
+            style={{ color: 'var(--neutral-500)', fontSize: 18, cursor: 'pointer' }}
           />
         </div>
         <Menu
-          theme="dark"
+          theme="light"
           mode="inline"
           selectedKeys={[activeMenuKey]}
           items={menuItems}
@@ -252,25 +259,26 @@ const MainLayout = () => {
           left: 0,
           right: 0,
           padding: '16px 20px',
-          borderTop: '1px solid rgba(255,255,255,0.1)',
-          background: 'rgba(0,0,0,0.2)',
+          borderTop: '1px solid var(--neutral-200)',
+          background: '#fafbfc',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <Avatar icon={<UserOutlined />} style={{ background: '#2a9299' }} />
             <div style={{ flex: 1 }}>
-              <div style={{ color: '#fff', fontWeight: 500, fontSize: 14 }}>{user?.name}</div>
-              <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12 }}>{getRoleLabel(user?.role)}</div>
+              <div style={{ color: 'var(--neutral-800)', fontWeight: 600, fontSize: 14 }}>{user?.name}</div>
+              <div style={{ color: 'var(--neutral-500)', fontSize: 12 }}>{getRoleLabel(user?.role)}</div>
             </div>
           </div>
           <div
             onClick={handleLogout}
             style={{
               marginTop: 12,
-              padding: '8px 12px',
-              background: 'rgba(255,255,255,0.1)',
+              padding: '10px 12px',
+              background: 'var(--error-100)',
               borderRadius: 8,
-              color: '#ff7875',
+              color: 'var(--error-500)',
               fontSize: 13,
+              fontWeight: 500,
               cursor: 'pointer',
               textAlign: 'center',
             }}
@@ -284,7 +292,7 @@ const MainLayout = () => {
       <Layout>
         {/* Header */}
         <Header className="main-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 14 }}>
             <div
               className="header-toggle"
               onClick={() => isMobile ? setMobileMenuOpen(true) : setCollapsed(!collapsed)}
@@ -296,7 +304,7 @@ const MainLayout = () => {
               )}
             </div>
 
-            {/* Page title on mobile */}
+            {/* Tên trang hiện tại - chỉ mobile để định vị */}
             {isMobile && (
               <span style={{ fontWeight: 600, color: '#134e52', fontSize: 16 }}>
                 {menuItems.find(item => item.key === activeMenuKey)?.label || 'BuyNow'}
@@ -305,13 +313,6 @@ const MainLayout = () => {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 16 }}>
-            {/* Notifications */}
-            <Badge count={0} size="small">
-              <div className="header-toggle">
-                <BellOutlined style={{ fontSize: isMobile ? 16 : 18 }} />
-              </div>
-            </Badge>
-
             {/* User Dropdown */}
             <Dropdown menu={userMenu} placement="bottomRight" trigger={['click']}>
               <div className="user-dropdown">
@@ -333,6 +334,31 @@ const MainLayout = () => {
           </div>
         </Content>
       </Layout>
+
+      {/* Bottom Navigation - Mobile */}
+      {isMobile && (
+        <nav className="bottom-nav">
+          {bottomNavItems.map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              className={`bottom-nav-item ${activeMenuKey === item.key ? 'active' : ''}`}
+              onClick={() => navigate(item.key)}
+            >
+              {item.icon}
+              <span>{item.label}</span>
+            </button>
+          ))}
+          <button
+            type="button"
+            className="bottom-nav-item"
+            onClick={() => setMobileMenuOpen(true)}
+          >
+            <AppstoreOutlined />
+            <span>Thêm</span>
+          </button>
+        </nav>
+      )}
     </Layout>
   )
 }

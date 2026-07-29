@@ -439,87 +439,73 @@ const exportEmployeeSalaryExcel = async (req, res) => {
     sheet.getRow(sigRowNum + 2).getCell(7).alignment = { horizontal: 'center' };
     sheet.getRow(sigRowNum + 2).getCell(7).font = { italic: true, size: 10, color: { argb: 'FF999999' } };
 
-    // ==================== SHEET 2: CHI TIẾT BÁN HÀNG ====================
-    const detailSheet = workbook.addWorksheet('Chi tiết bán hàng');
+    // ==================== CÁC SHEET CHI TIẾT: MỖI NHÂN VIÊN 1 SHEET ====================
+    const usedSheetNames = new Set(['báo cáo lương nhân viên']);
+    const makeSheetName = (name) => {
+      let base = (name || 'Nhân viên').replace(/[:\\/?*\[\]]/g, ' ').trim().slice(0, 28);
+      if (!base) base = 'Nhân viên';
+      let candidate = base;
+      let i = 2;
+      while (usedSheetNames.has(candidate.toLowerCase())) {
+        candidate = `${base.slice(0, 26)} ${i}`;
+        i++;
+      }
+      usedSheetNames.add(candidate.toLowerCase());
+      return candidate;
+    };
 
-    detailSheet.columns = [
-      { width: 6 },   // A - STT
-      { width: 12 },  // B - Ngày
-      { width: 28 },  // C - Tên khách
-      { width: 16 },  // D - Mã hàng
-      { width: 30 },  // E - Tên hàng
-      { width: 14 },  // F - Mã đơn
-      { width: 12 },  // G - SL bán
-      { width: 12 },  // H - Hàng trả
-      { width: 16 },  // I - Đơn giá
-      { width: 20 },  // J - DT sau trừ trả
-    ];
-
-    // Title
-    detailSheet.mergeCells('A1:J1');
-    const dTitle = detailSheet.getRow(1);
-    dTitle.getCell(1).value = 'CHI TIẾT BÁN HÀNG THEO NHÂN VIÊN';
-    dTitle.getCell(1).font = { bold: true, size: 14, color: { argb: 'FF2A9299' } };
-    dTitle.getCell(1).alignment = { horizontal: 'center' };
-    dTitle.height = 24;
-
-    detailSheet.mergeCells('A2:J2');
-    detailSheet.getRow(2).getCell(1).value = dateLabel;
-    detailSheet.getRow(2).getCell(1).font = { italic: true, size: 11, color: { argb: 'FF888888' } };
-    detailSheet.getRow(2).getCell(1).alignment = { horizontal: 'center' };
-
-    // Table header
     const detailHeaders = ['STT', 'Ngày', 'Tên khách', 'Mã hàng', 'Tên hàng', 'Mã đơn', 'SL bán', 'Hàng trả', 'Đơn giá', 'DT sau trừ trả'];
-    const dHeaderRow = detailSheet.getRow(4);
-    dHeaderRow.height = 22;
-    detailHeaders.forEach((label, i) => {
-      const cell = dHeaderRow.getCell(i + 1);
-      cell.value = label;
-      cell.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2A9299' } };
-      cell.alignment = { horizontal: 'center', vertical: 'middle' };
-      cell.border = {
-        top: { style: 'thin' }, bottom: { style: 'thin' },
-        left: { style: 'thin' }, right: { style: 'thin' },
-      };
-    });
-
-    // Fetch detail rows for each employee
-    let currentRow = 5;
-    const grandTotals = { quantity: 0, returned: 0, revenue: 0 };
 
     for (const emp of activeEmployees) {
-      // Fetch orders + items + returns for this employee
       const empOrders = await prisma.order.findMany({
         where: { ...orderWhere, userId: emp.id },
         include: {
-          items: {
-            include: { product: { select: { sku: true } } },
-          },
-          returns: prisma.orderReturn ? {
-            include: { items: true },
-          } : undefined,
+          items: { include: { product: { select: { sku: true } } } },
+          returns: prisma.orderReturn ? { include: { items: true } } : undefined,
         },
         orderBy: { orderDate: 'asc' },
       });
 
       if (empOrders.length === 0) continue;
 
-      // Group header row for employee
-      detailSheet.mergeCells(`A${currentRow}:J${currentRow}`);
-      const groupCell = detailSheet.getRow(currentRow).getCell(1);
-      groupCell.value = `▸ Nhân viên: ${emp.name} (${roleLabels[emp.role] || emp.role})`;
-      groupCell.font = { bold: true, size: 12, color: { argb: 'FFFFFFFF' } };
-      groupCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF134E52' } };
-      groupCell.alignment = { horizontal: 'left', vertical: 'middle', indent: 1 };
-      detailSheet.getRow(currentRow).height = 22;
-      currentRow++;
+      const empSheet = workbook.addWorksheet(makeSheetName(emp.name));
 
+      empSheet.columns = [
+        { width: 6 }, { width: 12 }, { width: 28 }, { width: 16 }, { width: 30 },
+        { width: 14 }, { width: 12 }, { width: 12 }, { width: 16 }, { width: 20 },
+      ];
+
+      empSheet.mergeCells('A1:J1');
+      const empTitle = empSheet.getRow(1);
+      empTitle.getCell(1).value = `CHI TIẾT BÁN HÀNG - ${emp.name}`;
+      empTitle.getCell(1).font = { bold: true, size: 14, color: { argb: 'FF2A9299' } };
+      empTitle.getCell(1).alignment = { horizontal: 'center' };
+      empTitle.height = 24;
+
+      empSheet.mergeCells('A2:J2');
+      empSheet.getRow(2).getCell(1).value = `${roleLabels[emp.role] || emp.role} · ${dateLabel}`;
+      empSheet.getRow(2).getCell(1).font = { italic: true, size: 11, color: { argb: 'FF888888' } };
+      empSheet.getRow(2).getCell(1).alignment = { horizontal: 'center' };
+
+      const empHeaderRow = empSheet.getRow(4);
+      empHeaderRow.height = 22;
+      detailHeaders.forEach((label, i) => {
+        const cell = empHeaderRow.getCell(i + 1);
+        cell.value = label;
+        cell.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2A9299' } };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.border = {
+          top: { style: 'thin' }, bottom: { style: 'thin' },
+          left: { style: 'thin' }, right: { style: 'thin' },
+        };
+      });
+
+      let rowIdx = 5;
       let stt = 0;
       const empTotals = { quantity: 0, returned: 0, revenue: 0 };
 
       for (const order of empOrders) {
-        // Build map of returned quantity per orderItemId for this order
         const returnedMap = new Map();
         if (order.returns && order.returns.length > 0) {
           for (const ret of order.returns) {
@@ -541,7 +527,7 @@ const exportEmployeeSalaryExcel = async (req, res) => {
           empTotals.returned += returnedQty;
           empTotals.revenue += netRevenue;
 
-          const row = detailSheet.getRow(currentRow);
+          const row = empSheet.getRow(rowIdx);
           row.getCell(1).value = stt;
           row.getCell(1).alignment = { horizontal: 'center' };
 
@@ -588,15 +574,16 @@ const exportEmployeeSalaryExcel = async (req, res) => {
               row.getCell(c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF9FAFB' } };
             }
           }
-          currentRow++;
+          rowIdx++;
         }
       }
 
-      // Subtotal row for employee
-      const subRow = detailSheet.getRow(currentRow);
-      detailSheet.mergeCells(`A${currentRow}:F${currentRow}`);
-      subRow.getCell(1).value = `Cộng nhân viên ${emp.name}`;
-      subRow.getCell(1).font = { bold: true, italic: true };
+      // Tổng cộng của nhân viên
+      const subRow = empSheet.getRow(rowIdx);
+      subRow.height = 22;
+      empSheet.mergeCells(`A${rowIdx}:F${rowIdx}`);
+      subRow.getCell(1).value = `TỔNG CỘNG - ${emp.name}`;
+      subRow.getCell(1).font = { bold: true, size: 12 };
       subRow.getCell(1).alignment = { horizontal: 'right', indent: 1 };
 
       subRow.getCell(7).value = empTotals.quantity;
@@ -615,53 +602,13 @@ const exportEmployeeSalaryExcel = async (req, res) => {
       for (let c = 1; c <= 10; c++) {
         subRow.getCell(c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEEF9FA' } };
         subRow.getCell(c).border = {
-          top: { style: 'thin' }, bottom: { style: 'thin' },
-          left: { style: 'thin' }, right: { style: 'thin' },
-        };
-      }
-      currentRow++;
-
-      grandTotals.quantity += empTotals.quantity;
-      grandTotals.returned += empTotals.returned;
-      grandTotals.revenue += empTotals.revenue;
-
-      // Empty spacer row
-      currentRow++;
-    }
-
-    // Grand total row
-    if (grandTotals.quantity > 0) {
-      const gRow = detailSheet.getRow(currentRow);
-      gRow.height = 24;
-      detailSheet.mergeCells(`A${currentRow}:F${currentRow}`);
-      gRow.getCell(1).value = 'TỔNG CỘNG TẤT CẢ NHÂN VIÊN';
-      gRow.getCell(1).font = { bold: true, size: 12, color: { argb: 'FFFFFFFF' } };
-      gRow.getCell(1).alignment = { horizontal: 'right', indent: 1 };
-
-      gRow.getCell(7).value = grandTotals.quantity;
-      gRow.getCell(7).alignment = { horizontal: 'center' };
-      gRow.getCell(7).font = { bold: true, color: { argb: 'FFFFFFFF' } };
-
-      gRow.getCell(8).value = grandTotals.returned;
-      gRow.getCell(8).alignment = { horizontal: 'center' };
-      gRow.getCell(8).font = { bold: true, color: { argb: 'FFFFFFFF' } };
-
-      gRow.getCell(10).value = grandTotals.revenue;
-      gRow.getCell(10).numFmt = '#,##0';
-      gRow.getCell(10).alignment = { horizontal: 'right' };
-      gRow.getCell(10).font = { bold: true, color: { argb: 'FFFFFFFF' } };
-
-      for (let c = 1; c <= 10; c++) {
-        gRow.getCell(c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2A9299' } };
-        gRow.getCell(c).border = {
           top: { style: 'medium' }, bottom: { style: 'medium' },
           left: { style: 'thin' }, right: { style: 'thin' },
         };
       }
-    }
 
-    // Freeze header rows in detail sheet
-    detailSheet.views = [{ state: 'frozen', ySplit: 4 }];
+      empSheet.views = [{ state: 'frozen', ySplit: 4 }];
+    }
 
     // Write to response
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');

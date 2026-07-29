@@ -50,10 +50,10 @@ const theme = {
     colorTextTertiary: '#788492',
     colorTextQuaternary: '#98a4b3',
     colorBgContainer: '#ffffff',
-    colorBgLayout: '#f4f5f7',
+    colorBgLayout: '#e8edf1',
     colorBgElevated: '#ffffff',
-    colorBorder: '#e1e5ea',
-    colorBorderSecondary: '#f4f5f7',
+    colorBorder: '#dce1e7',
+    colorBorderSecondary: '#eef1f4',
 
     // Typography
     fontFamily: "'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
@@ -65,14 +65,14 @@ const theme = {
     fontSizeHeading5: 16,
 
     // Border Radius
-    borderRadius: 10,
-    borderRadiusLG: 16,
+    borderRadius: 8,
+    borderRadiusLG: 12,
     borderRadiusSM: 6,
     borderRadiusXS: 4,
 
-    // Shadows
-    boxShadow: '0 4px 12px rgba(13, 59, 62, 0.1)',
-    boxShadowSecondary: '0 8px 24px rgba(13, 59, 62, 0.12)',
+    // Shadows - subtle
+    boxShadow: '0 1px 3px rgba(15, 42, 46, 0.06)',
+    boxShadowSecondary: '0 6px 20px rgba(15, 42, 46, 0.1)',
 
     // Control - use defaults
 
@@ -85,6 +85,9 @@ const theme = {
   components: {
     Button: {
       fontWeight: 500,
+      primaryShadow: 'none',
+      defaultShadow: 'none',
+      dangerShadow: 'none',
     },
     Card: {
       headerBg: '#fafbfc',
@@ -98,9 +101,13 @@ const theme = {
       rowHoverBg: '#eef9fa',
     },
     Menu: {
-      darkItemBg: 'transparent',
-      darkSubMenuItemBg: 'transparent',
-      darkItemSelectedBg: '#21777e',
+      itemSelectedBg: '#eef9fa',
+      itemSelectedColor: '#134e52',
+      itemColor: '#5e6c7b',
+      itemHoverBg: '#f4f5f7',
+      itemBorderRadius: 9,
+      itemHeight: 44,
+      itemMarginInline: 12,
     },
     Modal: {
       borderRadiusLG: 16,

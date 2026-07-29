@@ -100,13 +100,11 @@ const CustomerForm = () => {
       <Card
         loading={loading}
         style={{
-          maxWidth: isMobile ? '100%' : 600,
+          maxWidth: isMobile ? '100%' : 880,
           border: isMobile ? 'none' : undefined,
           boxShadow: isMobile ? 'none' : undefined,
         }}
-        bodyStyle={{
-          padding: isMobile ? '16px 0' : 24,
-        }}
+        styles={{ body: { padding: isMobile ? '16px 0' : 28 } }}
       >
         <Form
           form={form}
@@ -117,7 +115,7 @@ const CustomerForm = () => {
         >
           <Form.Item
             name="name"
-            label={<span style={{ fontWeight: 500 }}>Tên khách hàng <span style={{ color: '#ff4d4f' }}>*</span></span>}
+            label={<span style={{ fontWeight: 500 }}>Tên khách hàng</span>}
             rules={[{ required: true, message: 'Vui lòng nhập tên khách hàng' }]}
           >
             <Input
@@ -127,31 +125,37 @@ const CustomerForm = () => {
             />
           </Form.Item>
 
-          <Form.Item
-            name="code"
-            label={<span style={{ fontWeight: 500 }}>Mã khách hàng</span>}
-          >
-            <Input
-              placeholder="Mã tự động nếu để trống"
-              style={{ height: isMobile ? 48 : 40 }}
-            />
-          </Form.Item>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+            gap: isMobile ? 0 : 16
+          }}>
+            <Form.Item
+              name="code"
+              label={<span style={{ fontWeight: 500 }}>Mã khách hàng</span>}
+            >
+              <Input
+                placeholder="Mã tự động nếu để trống"
+                style={{ height: isMobile ? 48 : 40 }}
+              />
+            </Form.Item>
 
-          <Form.Item
-            name="customerGroupId"
-            label={<span style={{ fontWeight: 500 }}>Nhóm khách hàng</span>}
-          >
-            <Select
-              placeholder="Chọn nhóm khách hàng"
-              allowClear
-              style={{ height: isMobile ? 48 : 40 }}
-              dropdownStyle={{ maxHeight: 300 }}
-              options={customerGroups.map((g) => ({
-                value: g.id,
-                label: g.name,
-              }))}
-            />
-          </Form.Item>
+            <Form.Item
+              name="customerGroupId"
+              label={<span style={{ fontWeight: 500 }}>Nhóm khách hàng</span>}
+            >
+              <Select
+                placeholder="Chọn nhóm khách hàng"
+                allowClear
+                style={{ height: isMobile ? 48 : 40 }}
+                popupMatchSelectWidth={false}
+                options={customerGroups.map((g) => ({
+                  value: g.id,
+                  label: g.name,
+                }))}
+              />
+            </Form.Item>
+          </div>
 
           <Form.Item
             name="phone"
