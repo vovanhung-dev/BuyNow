@@ -178,7 +178,31 @@ const RevenueByEmployee = () => {
       ),
     },
     {
-      title: 'Doanh thu',
+      title: 'DT hàng',
+      dataIndex: 'totalSubtotal',
+      key: 'totalSubtotal',
+      width: 140,
+      align: 'right',
+      render: (val) => (
+        <span style={{ color: '#5e6c7b' }}>
+          {formatPrice(val)} đ
+        </span>
+      ),
+    },
+    {
+      title: 'Chiết khấu',
+      dataIndex: 'totalDiscount',
+      key: 'totalDiscount',
+      width: 130,
+      align: 'right',
+      render: (val) => (
+        <span style={{ color: val > 0 ? '#e5a100' : '#98a4b3' }}>
+          {val > 0 ? '-' : ''}{formatPrice(val)} đ
+        </span>
+      ),
+    },
+    {
+      title: 'Doanh thu thực',
       dataIndex: 'totalRevenue',
       key: 'totalRevenue',
       width: 150,
@@ -295,7 +319,7 @@ const RevenueByEmployee = () => {
               borderRadius: 8,
             }}>
               <div>
-                <div style={{ fontSize: 11, color: '#788492' }}>Doanh thu</div>
+                <div style={{ fontSize: 11, color: '#788492' }}>Doanh thu thực</div>
                 <div style={{ fontWeight: 600, color: '#134e52' }}>
                   {formatPrice(employee.totalRevenue)} đ
                 </div>
@@ -304,6 +328,18 @@ const RevenueByEmployee = () => {
                 <div style={{ fontSize: 11, color: '#788492' }}>Số đơn</div>
                 <div style={{ fontWeight: 600, color: '#2a9299' }}>
                   {employee.totalOrders}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: '#788492' }}>DT hàng</div>
+                <div style={{ fontWeight: 500, color: '#5e6c7b' }}>
+                  {formatPrice(employee.totalSubtotal)} đ
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: '#788492' }}>Chiết khấu</div>
+                <div style={{ fontWeight: 500, color: employee.totalDiscount > 0 ? '#e5a100' : '#98a4b3' }}>
+                  {employee.totalDiscount > 0 ? '-' : ''}{formatPrice(employee.totalDiscount)} đ
                 </div>
               </div>
               <div>
@@ -466,6 +502,7 @@ const RevenueByEmployee = () => {
             columns={columns}
             rowKey="id"
             pagination={false}
+            scroll={{ x: 1150 }}
             onRow={(record) => ({
               onClick: () => handleViewDetail(record),
               style: { cursor: 'pointer' },

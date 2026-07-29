@@ -62,6 +62,8 @@ const getRevenueByEmployee = async (req, res) => {
             total: true,
             paidAmount: true,
             debtAmount: true,
+            discount: true,
+            subtotal: true,
           },
         });
 
@@ -69,6 +71,8 @@ const getRevenueByEmployee = async (req, res) => {
         const totalRevenue = orders.reduce((sum, o) => sum + Number(o.total), 0);
         const totalPaid = orders.reduce((sum, o) => sum + Number(o.paidAmount), 0);
         const totalDebt = orders.reduce((sum, o) => sum + Number(o.debtAmount), 0);
+        const totalDiscount = orders.reduce((sum, o) => sum + Number(o.discount), 0);
+        const totalSubtotal = orders.reduce((sum, o) => sum + Number(o.subtotal), 0);
         const avgOrderValue = totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0;
 
         return {
@@ -77,6 +81,8 @@ const getRevenueByEmployee = async (req, res) => {
           totalRevenue,
           totalPaid,
           totalDebt,
+          totalDiscount,
+          totalSubtotal,
           avgOrderValue,
         };
       })
@@ -92,6 +98,8 @@ const getRevenueByEmployee = async (req, res) => {
       totalRevenue: employeeStats.reduce((sum, e) => sum + e.totalRevenue, 0),
       totalPaid: employeeStats.reduce((sum, e) => sum + e.totalPaid, 0),
       totalDebt: employeeStats.reduce((sum, e) => sum + e.totalDebt, 0),
+      totalDiscount: employeeStats.reduce((sum, e) => sum + e.totalDiscount, 0),
+      totalSubtotal: employeeStats.reduce((sum, e) => sum + e.totalSubtotal, 0),
     };
 
     res.json({
@@ -231,13 +239,15 @@ const exportEmployeeSalaryExcel = async (req, res) => {
         const empOrderWhere = { ...orderWhere, userId: employee.id };
         const orders = await prisma.order.findMany({
           where: empOrderWhere,
-          select: { total: true, paidAmount: true, debtAmount: true },
+          select: { total: true, paidAmount: true, debtAmount: true, discount: true, subtotal: true },
         });
         const totalOrders = orders.length;
         const totalRevenue = orders.reduce((sum, o) => sum + Number(o.total), 0);
         const totalPaid = orders.reduce((sum, o) => sum + Number(o.paidAmount), 0);
         const totalDebt = orders.reduce((sum, o) => sum + Number(o.debtAmount), 0);
-        return { ...employee, totalOrders, totalRevenue, totalPaid, totalDebt };
+        const totalDiscount = orders.reduce((sum, o) => sum + Number(o.discount), 0);
+        const totalSubtotal = orders.reduce((sum, o) => sum + Number(o.subtotal), 0);
+        return { ...employee, totalOrders, totalRevenue, totalPaid, totalDebt, totalDiscount, totalSubtotal };
       })
     );
 
@@ -251,15 +261,16 @@ const exportEmployeeSalaryExcel = async (req, res) => {
     // Column widths
     sheet.columns = [
       { width: 6 },   // A - STT
-      { width: 28 },  // B - Tên NV
-      { width: 14 },  // C - Vai trò
-      { width: 14 },  // D - SĐT
-      { width: 12 },  // E - Số đơn
-      { width: 20 },  // F - Doanh thu
-      { width: 20 },  // G - Đã thu
-      { width: 20 },  // H - Còn nợ
-      { width: 20 },  // I - Hoa hồng
-      { width: 20 },  // J - Ghi chú
+      { width: 26 },  // B - Tên NV
+      { width: 12 },  // C - Vai trò
+      { width: 13 },  // D - SĐT
+      { width: 10 },  // E - Số đơn
+      { width: 18 },  // F - Doanh thu hàng
+      { width: 16 },  // G - Chiết khấu
+      { width: 18 },  // H - Doanh thu thực
+      { width: 16 },  // I - Đã thu
+      { width: 16 },  // J - Còn nợ
+      { width: 16 },  // K - Hoa hồng
     ];
 
     const dateLabel = startDate && endDate
@@ -267,43 +278,43 @@ const exportEmployeeSalaryExcel = async (req, res) => {
       : 'Tất cả thời gian';
 
     // === HEADER: Company Info ===
-    sheet.mergeCells('A1:J1');
+    sheet.mergeCells('A1:K1');
     const titleRow = sheet.getRow(1);
     titleRow.getCell(1).value = 'NPP HÙNG THƯ';
     titleRow.getCell(1).font = { bold: true, size: 16, color: { argb: 'FF134E52' } };
     titleRow.getCell(1).alignment = { horizontal: 'center' };
     titleRow.height = 28;
 
-    sheet.mergeCells('A2:J2');
+    sheet.mergeCells('A2:K2');
     const addrRow = sheet.getRow(2);
     addrRow.getCell(1).value = 'ĐT: 0865.888.128 - 09.1234.1256 | Số nhà 29 đường Lưu Cơ, phố Kim Đa, TP Ninh Bình';
     addrRow.getCell(1).font = { size: 10, color: { argb: 'FF666666' } };
     addrRow.getCell(1).alignment = { horizontal: 'center' };
 
     // Title
-    sheet.mergeCells('A4:J4');
+    sheet.mergeCells('A4:K4');
     const reportTitle = sheet.getRow(4);
     reportTitle.getCell(1).value = 'BÁO CÁO DOANH THU NHÂN VIÊN - TÍNH LƯƠNG';
     reportTitle.getCell(1).font = { bold: true, size: 14, color: { argb: 'FF2A9299' } };
     reportTitle.getCell(1).alignment = { horizontal: 'center' };
     reportTitle.height = 24;
 
-    sheet.mergeCells('A5:J5');
+    sheet.mergeCells('A5:K5');
     const dateRow = sheet.getRow(5);
     dateRow.getCell(1).value = dateLabel;
     dateRow.getCell(1).font = { italic: true, size: 11, color: { argb: 'FF888888' } };
     dateRow.getCell(1).alignment = { horizontal: 'center' };
 
     // === TABLE HEADER ===
-    const headerLabels = ['STT', 'Nhân viên', 'Vai trò', 'SĐT', 'Số đơn', 'Doanh thu', 'Đã thu', 'Còn nợ', 'Hoa hồng (2%)', 'Ghi chú'];
+    const headerLabels = ['STT', 'Nhân viên', 'Vai trò', 'SĐT', 'Số đơn', 'Doanh thu hàng', 'Chiết khấu', 'Doanh thu thực', 'Đã thu', 'Còn nợ', 'Hoa hồng (2%)'];
     const headerRow = sheet.getRow(7);
-    headerRow.height = 22;
+    headerRow.height = 30;
     headerLabels.forEach((label, i) => {
       const cell = headerRow.getCell(i + 1);
       cell.value = label;
       cell.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
       cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2A9299' } };
-      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
       cell.border = {
         top: { style: 'thin' }, bottom: { style: 'thin' },
         left: { style: 'thin' }, right: { style: 'thin' },
@@ -334,30 +345,43 @@ const exportEmployeeSalaryExcel = async (req, res) => {
       row.getCell(5).value = emp.totalOrders;
       row.getCell(5).alignment = { horizontal: 'center' };
 
-      row.getCell(6).value = emp.totalRevenue;
+      // Doanh thu hàng (trước chiết khấu) = subtotal
+      row.getCell(6).value = emp.totalSubtotal;
       row.getCell(6).numFmt = '#,##0';
       row.getCell(6).alignment = { horizontal: 'right' };
 
-      row.getCell(7).value = emp.totalPaid;
+      // Chiết khấu
+      row.getCell(7).value = emp.totalDiscount;
       row.getCell(7).numFmt = '#,##0';
       row.getCell(7).alignment = { horizontal: 'right' };
-
-      row.getCell(8).value = emp.totalDebt;
-      row.getCell(8).numFmt = '#,##0';
-      row.getCell(8).alignment = { horizontal: 'right' };
-      if (emp.totalDebt > 0) {
-        row.getCell(8).font = { color: { argb: 'FFDE350B' } };
+      if (emp.totalDiscount > 0) {
+        row.getCell(7).font = { color: { argb: 'FFE5A100' } };
       }
 
-      row.getCell(9).value = commission;
+      // Doanh thu thực (sau chiết khấu) = total
+      row.getCell(8).value = emp.totalRevenue;
+      row.getCell(8).numFmt = '#,##0';
+      row.getCell(8).alignment = { horizontal: 'right' };
+      row.getCell(8).font = { bold: true, color: { argb: 'FF134E52' } };
+
+      row.getCell(9).value = emp.totalPaid;
       row.getCell(9).numFmt = '#,##0';
       row.getCell(9).alignment = { horizontal: 'right' };
-      row.getCell(9).font = { bold: true, color: { argb: 'FF22A06B' } };
 
-      row.getCell(10).value = '';
+      row.getCell(10).value = emp.totalDebt;
+      row.getCell(10).numFmt = '#,##0';
+      row.getCell(10).alignment = { horizontal: 'right' };
+      if (emp.totalDebt > 0) {
+        row.getCell(10).font = { color: { argb: 'FFDE350B' } };
+      }
+
+      row.getCell(11).value = commission;
+      row.getCell(11).numFmt = '#,##0';
+      row.getCell(11).alignment = { horizontal: 'right' };
+      row.getCell(11).font = { bold: true, color: { argb: 'FF22A06B' } };
 
       // Borders & alternating colors
-      for (let c = 1; c <= 10; c++) {
+      for (let c = 1; c <= 11; c++) {
         row.getCell(c).border = {
           top: { style: 'thin' }, bottom: { style: 'thin' },
           left: { style: 'thin' }, right: { style: 'thin' },
@@ -381,28 +405,38 @@ const exportEmployeeSalaryExcel = async (req, res) => {
     totalRow.getCell(5).alignment = { horizontal: 'center' };
     totalRow.getCell(5).font = { bold: true };
 
-    totalRow.getCell(6).value = activeEmployees.reduce((s, e) => s + e.totalRevenue, 0);
+    totalRow.getCell(6).value = activeEmployees.reduce((s, e) => s + e.totalSubtotal, 0);
     totalRow.getCell(6).numFmt = '#,##0';
     totalRow.getCell(6).alignment = { horizontal: 'right' };
     totalRow.getCell(6).font = { bold: true };
 
-    totalRow.getCell(7).value = activeEmployees.reduce((s, e) => s + e.totalPaid, 0);
+    totalRow.getCell(7).value = activeEmployees.reduce((s, e) => s + e.totalDiscount, 0);
     totalRow.getCell(7).numFmt = '#,##0';
     totalRow.getCell(7).alignment = { horizontal: 'right' };
-    totalRow.getCell(7).font = { bold: true };
+    totalRow.getCell(7).font = { bold: true, color: { argb: 'FFE5A100' } };
 
-    totalRow.getCell(8).value = activeEmployees.reduce((s, e) => s + e.totalDebt, 0);
+    totalRow.getCell(8).value = activeEmployees.reduce((s, e) => s + e.totalRevenue, 0);
     totalRow.getCell(8).numFmt = '#,##0';
     totalRow.getCell(8).alignment = { horizontal: 'right' };
-    totalRow.getCell(8).font = { bold: true, color: { argb: 'FFDE350B' } };
+    totalRow.getCell(8).font = { bold: true, color: { argb: 'FF134E52' } };
 
-    const totalCommission = activeEmployees.reduce((s, e) => s + Math.round(e.totalRevenue * 0.02), 0);
-    totalRow.getCell(9).value = totalCommission;
+    totalRow.getCell(9).value = activeEmployees.reduce((s, e) => s + e.totalPaid, 0);
     totalRow.getCell(9).numFmt = '#,##0';
     totalRow.getCell(9).alignment = { horizontal: 'right' };
-    totalRow.getCell(9).font = { bold: true, color: { argb: 'FF22A06B' } };
+    totalRow.getCell(9).font = { bold: true };
 
-    for (let c = 1; c <= 10; c++) {
+    totalRow.getCell(10).value = activeEmployees.reduce((s, e) => s + e.totalDebt, 0);
+    totalRow.getCell(10).numFmt = '#,##0';
+    totalRow.getCell(10).alignment = { horizontal: 'right' };
+    totalRow.getCell(10).font = { bold: true, color: { argb: 'FFDE350B' } };
+
+    const totalCommission = activeEmployees.reduce((s, e) => s + Math.round(e.totalRevenue * 0.02), 0);
+    totalRow.getCell(11).value = totalCommission;
+    totalRow.getCell(11).numFmt = '#,##0';
+    totalRow.getCell(11).alignment = { horizontal: 'right' };
+    totalRow.getCell(11).font = { bold: true, color: { argb: 'FF22A06B' } };
+
+    for (let c = 1; c <= 11; c++) {
       totalRow.getCell(c).border = {
         top: { style: 'medium' }, bottom: { style: 'medium' },
         left: { style: 'thin' }, right: { style: 'thin' },
@@ -414,30 +448,30 @@ const exportEmployeeSalaryExcel = async (req, res) => {
     const sigRowNum = totalRowNum + 3;
     const sigDateStr = new Date().toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
-    sheet.mergeCells(`G${sigRowNum}:J${sigRowNum}`);
-    sheet.getRow(sigRowNum).getCell(7).value = `Ngày ${sigDateStr}`;
-    sheet.getRow(sigRowNum).getCell(7).alignment = { horizontal: 'center' };
-    sheet.getRow(sigRowNum).getCell(7).font = { italic: true, size: 10 };
+    sheet.mergeCells(`H${sigRowNum}:K${sigRowNum}`);
+    sheet.getRow(sigRowNum).getCell(8).value = `Ngày ${sigDateStr}`;
+    sheet.getRow(sigRowNum).getCell(8).alignment = { horizontal: 'center' };
+    sheet.getRow(sigRowNum).getCell(8).font = { italic: true, size: 10 };
 
     sheet.mergeCells(`A${sigRowNum + 1}:D${sigRowNum + 1}`);
     sheet.getRow(sigRowNum + 1).getCell(1).value = 'Người lập bảng';
     sheet.getRow(sigRowNum + 1).getCell(1).alignment = { horizontal: 'center' };
     sheet.getRow(sigRowNum + 1).getCell(1).font = { bold: true, size: 11 };
 
-    sheet.mergeCells(`G${sigRowNum + 1}:J${sigRowNum + 1}`);
-    sheet.getRow(sigRowNum + 1).getCell(7).value = 'Giám đốc';
-    sheet.getRow(sigRowNum + 1).getCell(7).alignment = { horizontal: 'center' };
-    sheet.getRow(sigRowNum + 1).getCell(7).font = { bold: true, size: 11 };
+    sheet.mergeCells(`H${sigRowNum + 1}:K${sigRowNum + 1}`);
+    sheet.getRow(sigRowNum + 1).getCell(8).value = 'Giám đốc';
+    sheet.getRow(sigRowNum + 1).getCell(8).alignment = { horizontal: 'center' };
+    sheet.getRow(sigRowNum + 1).getCell(8).font = { bold: true, size: 11 };
 
     sheet.mergeCells(`A${sigRowNum + 2}:D${sigRowNum + 2}`);
     sheet.getRow(sigRowNum + 2).getCell(1).value = '(Ký, ghi rõ họ tên)';
     sheet.getRow(sigRowNum + 2).getCell(1).alignment = { horizontal: 'center' };
     sheet.getRow(sigRowNum + 2).getCell(1).font = { italic: true, size: 10, color: { argb: 'FF999999' } };
 
-    sheet.mergeCells(`G${sigRowNum + 2}:J${sigRowNum + 2}`);
-    sheet.getRow(sigRowNum + 2).getCell(7).value = '(Ký, ghi rõ họ tên)';
-    sheet.getRow(sigRowNum + 2).getCell(7).alignment = { horizontal: 'center' };
-    sheet.getRow(sigRowNum + 2).getCell(7).font = { italic: true, size: 10, color: { argb: 'FF999999' } };
+    sheet.mergeCells(`H${sigRowNum + 2}:K${sigRowNum + 2}`);
+    sheet.getRow(sigRowNum + 2).getCell(8).value = '(Ký, ghi rõ họ tên)';
+    sheet.getRow(sigRowNum + 2).getCell(8).alignment = { horizontal: 'center' };
+    sheet.getRow(sigRowNum + 2).getCell(8).font = { italic: true, size: 10, color: { argb: 'FF999999' } };
 
     // ==================== CÁC SHEET CHI TIẾT: MỖI NHÂN VIÊN 1 SHEET ====================
     const usedSheetNames = new Set(['báo cáo lương nhân viên']);
@@ -503,9 +537,10 @@ const exportEmployeeSalaryExcel = async (req, res) => {
 
       let rowIdx = 5;
       let stt = 0;
-      const empTotals = { quantity: 0, returned: 0, revenue: 0 };
+      const empTotals = { quantity: 0, returned: 0, revenue: 0, discount: 0 };
 
       for (const order of empOrders) {
+        empTotals.discount += Number(order.discount || 0);
         const returnedMap = new Map();
         if (order.returns && order.returns.length > 0) {
           for (const ret of order.returns) {
@@ -603,6 +638,42 @@ const exportEmployeeSalaryExcel = async (req, res) => {
         subRow.getCell(c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEEF9FA' } };
         subRow.getCell(c).border = {
           top: { style: 'medium' }, bottom: { style: 'medium' },
+          left: { style: 'thin' }, right: { style: 'thin' },
+        };
+      }
+      // Nhãn cho cột tổng (dòng subRow) để rõ đây là doanh thu hàng
+      subRow.getCell(9).value = 'DT hàng:';
+      subRow.getCell(9).font = { bold: true, italic: true, color: { argb: 'FF788492' } };
+      subRow.getCell(9).alignment = { horizontal: 'right' };
+      rowIdx++;
+
+      // (-) Chiết khấu đơn hàng
+      const dcRow = empSheet.getRow(rowIdx);
+      empSheet.mergeCells(`A${rowIdx}:I${rowIdx}`);
+      dcRow.getCell(1).value = '(-) Chiết khấu đơn hàng';
+      dcRow.getCell(1).font = { italic: true, color: { argb: 'FFE5A100' } };
+      dcRow.getCell(1).alignment = { horizontal: 'right', indent: 1 };
+      dcRow.getCell(10).value = empTotals.discount > 0 ? -empTotals.discount : 0;
+      dcRow.getCell(10).numFmt = '#,##0';
+      dcRow.getCell(10).alignment = { horizontal: 'right' };
+      dcRow.getCell(10).font = { color: { argb: 'FFE5A100' } };
+      rowIdx++;
+
+      // = Doanh thu thực (sau chiết khấu) — khớp số trên web
+      const netRow = empSheet.getRow(rowIdx);
+      netRow.height = 22;
+      empSheet.mergeCells(`A${rowIdx}:I${rowIdx}`);
+      netRow.getCell(1).value = 'DOANH THU THỰC (sau chiết khấu)';
+      netRow.getCell(1).font = { bold: true, size: 12, color: { argb: 'FF134E52' } };
+      netRow.getCell(1).alignment = { horizontal: 'right', indent: 1 };
+      netRow.getCell(10).value = empTotals.revenue - empTotals.discount;
+      netRow.getCell(10).numFmt = '#,##0';
+      netRow.getCell(10).alignment = { horizontal: 'right' };
+      netRow.getCell(10).font = { bold: true, size: 12, color: { argb: 'FF134E52' } };
+      for (let c = 1; c <= 10; c++) {
+        netRow.getCell(c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE9F7F8' } };
+        netRow.getCell(c).border = {
+          top: { style: 'thin' }, bottom: { style: 'double' },
           left: { style: 'thin' }, right: { style: 'thin' },
         };
       }
